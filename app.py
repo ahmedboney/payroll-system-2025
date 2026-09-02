@@ -86,6 +86,26 @@ def login_required(f):
         return f(*a, **kw)
     return wrapper
 
+# تسلسل الصلاحيات: admin > supervisor > user > viewer
+_ROLE_LEVEL = {'admin': 4, 'supervisor': 3, 'user': 2, 'viewer': 1}
+
+def role_required(min_role):
+    """حماية مسار بناءً على الحد الأدنى للصلاحية."""
+    def decorator(f):
+        @wraps(f)
+        def wrapper(*a, **kw):
+            if 'user_id' not in session:
+                flash('يجب تسجيل الدخول أولاً', 'error')
+                return redirect(url_for('login'))
+            user = db.get_user_by_id(session['user_id'])
+            user_level = _ROLE_LEVEL.get(user.get('role',''), 0) if user else 0
+            if user_level < _ROLE_LEVEL.get(min_role, 99):
+                flash('ليس لديك صلاحية كافية للوصول', 'error')
+                return redirect(url_for('dashboard'))
+            return f(*a, **kw)
+        return wrapper
+    return decorator
+
 def admin_required(f):
     @wraps(f)
     def wrapper(*a, **kw):
@@ -240,7 +260,7 @@ def employees():
                            sort=sort, search=search)
 
 @app.route('/employees/add', methods=['POST'])
-@login_required
+@role_required('supervisor')
 @csrf_required
 def add_employee():
     d = request.form.to_dict()
@@ -271,7 +291,7 @@ def employee_detail(emp_id):
     return render_template('employee_detail.html', emp=emp, depts=depts, history=history, contracts=contracts)
 
 @app.route('/employees/<int:emp_id>/edit', methods=['POST'])
-@login_required
+@role_required('supervisor')
 @csrf_required
 def edit_employee(emp_id):
     old = db.get_employee(emp_id)
@@ -374,7 +394,7 @@ def attendance():
     return render_template('attendance.html', emps=emps, records=records, month=month)
 
 @app.route('/attendance/save', methods=['POST'])
-@login_required
+@role_required('user')
 @csrf_required
 def save_attendance():
     month = request.json.get('month')
@@ -391,7 +411,7 @@ def leaves():
     return render_template('leaves.html', emps=emps, records=records)
 
 @app.route('/leaves/add', methods=['POST'])
-@login_required
+@role_required('user')
 @csrf_required
 def add_leave():
     d = request.form.to_dict()
@@ -422,7 +442,7 @@ def overtime():
     return render_template('overtime.html', emps=emps, records=records, month=month)
 
 @app.route('/overtime/save', methods=['POST'])
-@login_required
+@role_required('user')
 @csrf_required
 def save_overtime():
     month = request.json.get('month')
@@ -440,7 +460,7 @@ def commissions():
     return render_template('commissions.html', emps=emps, records=records, month=month)
 
 @app.route('/commissions/save', methods=['POST'])
-@login_required
+@role_required('user')
 @csrf_required
 def save_commissions():
     month = request.json.get('month')
@@ -459,7 +479,7 @@ def deductions():
     return render_template('deductions.html', emps=emps, records=records, types=types, month=month)
 
 @app.route('/deductions/save', methods=['POST'])
-@login_required
+@role_required('user')
 @csrf_required
 def save_deductions():
     month = request.json.get('month')
@@ -470,7 +490,7 @@ def save_deductions():
 # ==================== BULK INCENTIVES (جماعية) ====================
 # حوافز/خصومات تُطبق على الكل دفعة واحدة -> تُسجَّل كحوافز إضافية
 @app.route('/bulk-incentives', methods=['GET','POST'])
-@login_required
+@role_required('supervisor')
 @csrf_required
 def bulk_incentives():
     month = request.args.get('month', datetime.now().strftime('%Y-%m'))
@@ -511,7 +531,7 @@ def advances():
     return render_template('advances.html', emps=emps, records=records)
 
 @app.route('/advances/add', methods=['POST'])
-@login_required
+@role_required('supervisor')
 @csrf_required
 def add_advance():
     d = request.form.to_dict()
@@ -545,7 +565,7 @@ def payroll():
                            settings=settings, signed_map=signed_map)
 
 @app.route('/payroll/save', methods=['POST'])
-@login_required
+@role_required('supervisor')
 @csrf_required
 def save_payroll():
     month = request.json.get('month')
@@ -554,7 +574,7 @@ def save_payroll():
     return jsonify({'ok': True})
 
 @app.route('/payroll/confirm', methods=['POST'])
-@login_required
+@role_required('supervisor')
 @csrf_required
 def confirm_payroll():
     month = request.form['month']
@@ -564,7 +584,7 @@ def confirm_payroll():
     return redirect(url_for('payroll', month=month))
 
 @app.route('/payroll/export', methods=['POST'])
-@login_required
+@role_required('supervisor')
 @csrf_required
 def export_payroll():
     month = request.form['month']
@@ -673,7 +693,7 @@ def contracts():
     return render_template('contracts.html', emps=emps, records=records)
 
 @app.route('/contracts/add', methods=['POST'])
-@login_required
+@role_required('supervisor')
 @csrf_required
 def add_contract():
     d = request.form.to_dict()
@@ -904,9 +924,15 @@ def add_user():
     if len(u.get('password','')) < 8:
         flash('كلمة المرور يجب أن تكون 8 أحرف على الأقل', 'error')
         return redirect(url_for('users'))
+    # تحقق من صلاحية صالحة فقط
+    valid_roles = ('admin','supervisor','user','viewer')
+    role = u.get('role','user')
+    if role not in valid_roles:
+        role = 'user'
+    u['role'] = role
     try:
         db.add_user(u)
-        db.log_audit('add', 'user', None, f'إضافة مستخدم: {u.get("username")}')
+        db.log_audit('add', 'user', None, f'إضافة مستخدم: {u.get("username")} ({role})')
         flash('تم إضافة المستخدم', 'success')
     except Exception:
         flash('اسم المستخدم موجود بالفعل', 'error')

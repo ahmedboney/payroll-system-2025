@@ -2,6 +2,7 @@
 {% block title %}حساب المرتبات{% endblock %}
 {% block header %}حساب المرتبات الشهري{% endblock %}
 {% block actions %}
+{% if current_user.role in ('admin','supervisor') %}
 <div style="display:flex;gap:10px;" class="no-print">
     <button class="btn btn-success" onclick="savePayroll()">💾 حفظ المرتبات</button>
     <form method="POST" action="{{ url_for('confirm_payroll') }}" style="display:inline" onsubmit="return confirm('اعتماد صرف المرتبات؟')">
@@ -14,6 +15,7 @@
         <button class="btn btn-outline">⬇ تصدير Excel</button>
     </form>
 </div>
+{% endif %}
 {% endblock %}
 
 {% block content %}

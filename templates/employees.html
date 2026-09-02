@@ -2,7 +2,9 @@
 {% block title %}الموظفين{% endblock %}
 {% block header %}إدارة الموظفين{% endblock %}
 {% block actions %}
+{% if current_user.role != 'viewer' %}
 <button class="btn btn-primary no-print" onclick="openModal('addModal')">+ موظف جديد</button>
+{% endif %}
 <a href="{{ url_for('export_employees') }}" class="btn btn-outline no-print">⬇ Excel</a>
 {% endblock %}
 
@@ -55,7 +57,9 @@
                         <td><span class="badge badge-{{ 'success' if e.status=='active' else 'gray' }}">{{ 'نشط' if e.status=='active' else e.status }}</span></td>
                         <td class="no-print">
                             <a href="{{ url_for('employee_detail', emp_id=e.id) }}" class="btn btn-sm btn-outline">ملف</a>
+                            {% if current_user.role != 'viewer' %}
                             <button class="btn btn-sm btn-primary" onclick="editEmp({{ e|tojson }})">تعديل</button>
+                            {% endif %}
                             {% if current_user.role=='admin' %}
                             <form method="POST" action="{{ url_for('delete_employee', emp_id=e.id) }}" style="display:inline" onsubmit="return confirm('حذف موظف؟')">
                                 <button class="btn btn-sm btn-danger">حذف</button>

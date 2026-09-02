@@ -2,7 +2,9 @@
 {% block title %}الخصومات{% endblock %}
 {% block header %}الخصومات المتعددة{% endblock %}
 {% block actions %}
+{% if current_user.role != 'viewer' %}
 <button class="btn btn-success no-print" onclick="saveDeductions()">💾 حفظ الكل</button>
+{% endif %}
 {% endblock %}
 
 {% block content %}

@@ -17,7 +17,7 @@
     {% if current_user %}
     <div class="sidebar-user">
         👤 {{ current_user.full_name or current_user.username }}
-        <span class="badge badge-primary">{{ 'مدير' if current_user.role=='admin' else 'مستخدم' }}</span>
+        <span class="badge badge-{{ 'danger' if current_user.role=='admin' else 'warning' if current_user.role=='supervisor' else 'info' if current_user.role=='user' else 'gray' }}">{{ {'admin':'مدير','supervisor':'مشرف','user':'مستخدم','viewer':'مشاهد'}.get(current_user.role,'مستخدم') }}</span>
     </div>
     {% endif %}
     <nav>
@@ -38,7 +38,9 @@
         <div class="menu-section">المالية</div>
         <a href="{{ url_for('deductions') }}" class="menu-item {{ 'active' if request.endpoint=='deductions' }}"><span class="icon">📉</span>الخصومات</a>
         <a href="{{ url_for('advances') }}" class="menu-item {{ 'active' if request.endpoint=='advances' }}"><span class="icon">💰</span>السلف</a>
+        {% if current_user.role != 'viewer' %}
         <a href="{{ url_for('bulk_incentives') }}" class="menu-item {{ 'active' if request.endpoint=='bulk_incentives' }}"><span class="icon">🎯</span>حوافز/خصومات جماعية</a>
+        {% endif %}
 
         <div class="menu-section">المرتبات</div>
         <a href="{{ url_for('payroll') }}" class="menu-item {{ 'active' if request.endpoint=='payroll' }}"><span class="icon">🧾</span>حساب المرتبات</a>
@@ -54,8 +56,8 @@
         {% endif %}
 
         <div class="menu-section">الإعدادات</div>
-        <a href="{{ url_for('settings') }}" class="menu-item {{ 'active' if request.endpoint=='settings' }}"><span class="icon">⚙️</span>الإعدادات</a>
         {% if current_user.role=='admin' %}
+        <a href="{{ url_for('settings') }}" class="menu-item {{ 'active' if request.endpoint=='settings' }}"><span class="icon">⚙️</span>الإعدادات</a>
         <a href="{{ url_for('users') }}" class="menu-item {{ 'active' if request.endpoint=='users' }}"><span class="icon">🔐</span>المستخدمين</a>
         {% endif %}
         <a href="{{ url_for('guide') }}" class="menu-item {{ 'active' if request.endpoint=='guide' }}"><span class="icon">📖</span>دليل الاستخدام</a>

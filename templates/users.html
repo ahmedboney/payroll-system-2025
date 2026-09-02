@@ -18,7 +18,7 @@
                         <td>{{ u.id }}</td>
                         <td><strong>{{ u.username }}</strong></td>
                         <td>{{ u.full_name or '-' }}</td>
-                        <td><span class="badge badge-{{ 'danger' if u.role=='admin' else 'info' }}">{{ 'مدير' if u.role=='admin' else 'مستخدم' }}</span></td>
+                        <td><span class="badge badge-{{ 'danger' if u.role=='admin' else 'warning' if u.role=='supervisor' else 'info' if u.role=='user' else 'gray' }}">{{ {'admin':'مدير','supervisor':'مشرف','user':'مستخدم','viewer':'مشاهد'}.get(u.role,'مستخدم') }}</span></td>
                         <td><span class="badge badge-{{ 'success' if u.active else 'gray' }}">{{ 'نشط' if u.active else 'موقوف' }}</span></td>
                         <td class="no-print" style="display:flex;gap:0.3rem;flex-wrap:wrap">
                             {% if u.id != current_user.id %}
@@ -39,6 +39,12 @@
                 </tbody>
             </table>
         </div>
+        <div style="margin-top:12px;font-size:.8rem;color:#9ca3af;display:flex;flex-wrap:wrap;gap:12px">
+            <span><span class="badge badge-danger">مدير</span> كل الصلاحيات</span>
+            <span><span class="badge badge-warning">مشرف</span> إدارة الموظفين والمرتبات والسلف والعقود</span>
+            <span><span class="badge badge-info">مستخدم</span> عرض + تسجيل حضور/إضافي/عمولات/خصومات</span>
+            <span><span class="badge badge-gray">مشاهد</span> عرض فقط (بدون تعديل)</span>
+        </div>
     </div>
 </div>
 
@@ -53,7 +59,12 @@
                 <div class="form-group"><label>كلمة المرور *</label><input type="password" name="password" class="form-control" required></div>
                 <div class="form-group"><label>الاسم الكامل</label><input name="full_name" class="form-control"></div>
                 <div class="form-group"><label>الصلاحية</label>
-                    <select name="role" class="form-control"><option value="user">مستخدم</option><option value="admin">مدير</option></select></div>
+                    <select name="role" class="form-control">
+                        <option value="viewer">مشاهد (عرض فقط)</option>
+                        <option value="user">مستخدم (عرض + إدخال حضور/حوافز)</option>
+                        <option value="supervisor">مشرف (إدارة كاملة عدا الإعدادات)</option>
+                        <option value="admin">مدير (كل الصلاحيات)</option>
+                    </select></div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-primary">حفظ</button>

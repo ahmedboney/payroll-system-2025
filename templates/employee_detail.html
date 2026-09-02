@@ -22,7 +22,9 @@
 <div class="card">
     <div class="card-header">
         <h3>بيانات الموظف</h3>
+        {% if current_user.role != 'viewer' %}
         <button class="btn btn-primary btn-sm no-print" onclick="openModal('editModal')">تعديل البيانات</button>
+        {% endif %}
     </div>
     <div class="card-body">
         <div class="form-row">

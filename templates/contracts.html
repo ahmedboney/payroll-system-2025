@@ -2,7 +2,9 @@
 {% block title %}العقود{% endblock %}
 {% block header %}إدارة العقود{% endblock %}
 {% block actions %}
+{% if current_user.role != 'viewer' %}
 <button class="btn btn-primary no-print" onclick="openModal('addModal')">+ عقد جديد</button>
+{% endif %}
 {% endblock %}
 
 {% block content %}
