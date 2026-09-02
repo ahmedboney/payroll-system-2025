@@ -1,10 +1,17 @@
 import sqlite3
 import os
+import sys
 import json
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 
-DB_PATH = os.path.join(os.path.dirname(__file__), 'payroll.db')
+# في وضع PyInstaller: قاعدة البيانات تكون بجوار الـ exe (وليس في مجلد التحميل المؤقت)
+if getattr(sys, 'frozen', False):
+    _BASE_DIR = os.path.dirname(sys.executable)
+else:
+    _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+DB_PATH = os.path.join(_BASE_DIR, 'payroll.db')
 
 class Database:
     def __init__(self):
@@ -325,11 +332,18 @@ class Database:
 
     def seed_defaults(self):
         c = self._cur()
-        # admin user
+        # المستخدمون الافتراضيون (يُنبأون فقط عند قاعدة بيانات جديدة تماماً)
         c.execute("SELECT COUNT(*) FROM users")
         if c.fetchone()[0] == 0:
-            c.execute("INSERT INTO users (username,password,full_name,role) VALUES (?,?,?,?)",
-                ('admin', generate_password_hash('admin123'), 'مدير النظام', 'admin'))
+            users = [
+                ('admin', 'admin123', 'مدير النظام', 'admin'),
+                ('supervisor', 'super123', 'محمد المشرف', 'supervisor'),
+                ('user', 'user123', 'سارة المستخدمة', 'user'),
+                ('viewer', 'viewer123', 'خالد المشاهد', 'viewer'),
+            ]
+            for uname, pwd, fname, role in users:
+                c.execute("INSERT INTO users (username,password,full_name,role) VALUES (?,?,?,?)",
+                    (uname, generate_password_hash(pwd), fname, role))
         # settings
         c.execute("SELECT COUNT(*) FROM settings")
         if c.fetchone()[0] == 0:

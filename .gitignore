@@ -25,3 +25,8 @@ Thumbs.db
 *.log
 .idea/
 .vscode/
+
+# PyInstaller build artifacts (لا ترفع ملف exe المؤقت وأرشيفات البناء)
+dist/
+build/
+*.exe

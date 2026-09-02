@@ -1,12 +1,14 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, send_file, abort
 from database import Database
 from functools import wraps
-import os, io, re, json, hashlib, secrets
+import os, io, re, json, hashlib, secrets, time, threading, webbrowser
 from datetime import datetime, date, timedelta
 import calendar
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
+
+import sys
 
 # ------------------------------------------------------------
 #  إعداد المفتاح السرّي بشكل ثابت (لا يتغير مع كل تشغيل)
@@ -16,8 +18,13 @@ def _get_secret_key():
     env = os.environ.get('PAYROLL_SECRET_KEY')
     if env:
         return env
+    # تحديد المجلد الأساسي: بجوار الـ exe في وضع PyInstaller، أو بجانب app.py
+    if getattr(sys, 'frozen', False):
+        base_dir = os.path.dirname(sys.executable)
+    else:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+    keyfile = os.path.join(base_dir, '.secret_key')
     # 2) من ملف سري - أول شركة
-    keyfile = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.secret_key')
     if os.path.exists(keyfile):
         with open(keyfile, 'r', encoding='utf-8') as f:
             v = f.read().strip()
@@ -44,8 +51,13 @@ app.config.update(
 
 db = Database()
 
-# ملاحظة: مجلد القوالب والاستاتيك ضمن التطبيق
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# ملاحظة: مجلد القوالب والاستاتيك ضمن التطبيق (مجلد التحميل المؤقت في وضع الـ exe)
+if getattr(sys, 'frozen', False):
+    BASE_DIR = sys._MEIPASS
+    DATA_DIR = os.path.dirname(sys.executable)
+else:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    DATA_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # ==================== HELPERS / SECURITY ====================
 
@@ -901,7 +913,7 @@ def backup_delete(filename):
 def backup_download(filename):
     if not (filename.startswith('backup_') and filename.endswith('.db')):
         abort(404)
-    p = os.path.join(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backups'), filename)
+    p = os.path.join(os.path.join(DATA_DIR, 'backups'), filename)
     if not os.path.isfile(p):
         abort(404)
     with open(p, 'rb') as f:
@@ -1133,8 +1145,23 @@ def _num(v, default=0):
         return default
 
 # ==================== RUN ====================
-if __name__ == '__main__':
+import webbrowser, threading
+
+def _open_browser(port):
+    time.sleep(1.5)
+    try:
+        webbrowser.open(f'http://localhost:{port}/login')
+    except Exception:
+        pass
+
+def run_server():
     # التشغيل الآمن: debug معطّل في الإنتاج
     debug = os.environ.get('PAYROLL_DEBUG', '0') == '1'
-    app.run(debug=debug, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), threaded=True)
+    port = int(os.environ.get('PORT', 5000))
+    if os.environ.get('PAYROLL_NO_BROWSER', '0') != '1':
+        threading.Thread(target=_open_browser, args=(port,), daemon=True).start()
+    app.run(debug=debug, host='0.0.0.0', port=port, threaded=True)
+
+if __name__ == '__main__':
+    run_server()
 
