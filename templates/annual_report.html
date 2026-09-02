@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}التقرير السنوي{% endblock %}
+{% block header %}التقرير السنوي للمرتبات{% endblock %}
+{% block actions %}
+<div class="no-print" style="display:flex;gap:12px;">
+    <select onchange="window.location.href='?year='+this.value" class="form-control" style="width:120px;">
+        {% for y in range(2020,2031) %}
+        <option value="{{ y }}" {{ 'selected' if y|string==year }}>{{ y }}</option>
+        {% endfor %}
+    </select>
+    <button class="btn btn-outline" onclick="window.print()">🖨️ طباعة</button>
+</div>
+{% endblock %}
+
+{% block content %}
+{% set mn = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'] %}
+<div class="stats-grid">
+    <div class="stat-card"><div class="stat-icon green">💵</div><div class="stat-info"><h3>{{ "{:,.0f}".format(grand.earnings) }}</h3><p>إجمالي المستحقات السنوية</p></div></div>
+    <div class="stat-card"><div class="stat-icon red">📉</div><div class="stat-info"><h3>{{ "{:,.0f}".format(grand.deductions) }}</h3><p>إجمالي الخصومات</p></div></div>
+    <div class="stat-card" style="background:var(--primary-light);"><div class="stat-icon"><span style="font-size:1.4rem;">🧾</span></div><div class="stat-info"><h3 style="color:var(--primary-dark);">{{ "{:,.0f}".format(grand.net) }}</h3><p>صافي سنوي</p></div></div>
+</div>
+
+<div class="card">
+    <div class="card-header"><h3>المرتبات الشهرية - {{ year }}</h3></div>
+    <div class="card-body">
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>الشهر</th><th>الموظفون</th><th>المستحقات</th><th>الخصومات</th><th>الصافي</th></tr></thead>
+                <tbody>
+                    {% for i in range(1,13) %}
+                    {% set m = '%04d-%02d'|format(year|int, i) %}
+                    {% set d = data.get(m) %}
+                    <tr>
+                        <td><strong>{{ mn[i-1] }} {{ year }}</strong></td>
+                        <td><span class="badge badge-primary">{{ d.count if d else 0 }}</span></td>
+                        <td class="number-cell pos">{{ "{:,.0f}".format(d.earnings if d else 0) }}</td>
+                        <td class="number-cell neg">{{ "{:,.0f}".format(d.deductions if d else 0) }}</td>
+                        <td class="number-cell total">{{ "{:,.0f}".format(d.net if d else 0) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="totals-row">
+                        <td style="text-align:center;">الإجمالي السنوي</td><td></td>
+                        <td class="number-cell pos">{{ "{:,.0f}".format(grand.earnings) }}</td>
+                        <td class="number-cell neg">{{ "{:,.0f}".format(grand.deductions) }}</td>
+                        <td class="number-cell total">{{ "{:,.0f}".format(grand.net) }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

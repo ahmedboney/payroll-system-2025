@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}تقرير الأقسام{% endblock %}
+{% block header %}تقرير الأقسام الشهري{% endblock %}
+{% block actions %}
+<div class="no-print" style="display:flex;gap:10px;">
+    <button class="btn btn-outline" onclick="window.print()">🖨️ طباعة</button>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="month-picker no-print">
+    <label style="font-weight:600;">الشهر:</label>
+    <input type="month" id="m" value="{{ month }}" onchange="window.location.href='?month='+this.value">
+</div>
+
+{% if grouped %}
+<div class="card">
+    <div class="card-header"><h3>ملخص الأقسام - {{ month }}</h3></div>
+    <div class="card-body">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:22px;">
+            {% for name,g in grouped.items() %}
+            {% if g.count %}
+            <div style="text-align:center;padding:16px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:10px;">
+                <div style="font-weight:600;margin-bottom:6px;">{{ name }}</div>
+                <div style="font-size:.78rem;color:#9ca3af;">{{ g.count }} موظف</div>
+                <div style="font-size:1.2rem;font-weight:700;color:var(--primary);font-family:Consolas,monospace;margin-top:6px;">{{ "{:,.0f}".format(g.net) }}</div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>القسم</th><th>الموظفون</th><th>الأساسي</th><th>المستحقات</th><th>الخصومات</th><th>الصافي</th></tr></thead>
+                <tbody>
+                    {% for name,g in grouped.items() %}
+                    {% if g.count %}
+                    <tr>
+                        <td><strong>{{ name }}</strong></td>
+                        <td><span class="badge badge-primary">{{ g.count }}</span></td>
+                        <td class="number-cell">{{ "{:,.0f}".format(g.base) }}</td>
+                        <td class="number-cell pos">{{ "{:,.0f}".format(g.earnings) }}</td>
+                        <td class="number-cell neg">{{ "{:,.0f}".format(g.deductions) }}</td>
+                        <td class="number-cell total">{{ "{:,.0f}".format(g.net) }}</td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="card"><div class="card-body"><div class="empty-state"><div class="icon">📈</div><h3>لا توجد بيانات</h3></div></div></div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}سجل التدقيق{% endblock %}
+{% block header %}سجل تدقيق العمليات{% endblock %}
+{% block actions %}
+<div class="no-print" style="display:flex;gap:10px;">
+    <a href="{{ url_for('audit_export') }}" class="btn btn-outline">⬇ تصدير Excel</a>
+    <button class="btn btn-outline" onclick="window.print()">🖨️ طباعة</button>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header"><h3>سجل العمليات الحساسة (آخر {{ logs|length }} عملية)</h3></div>
+    <div class="card-body">
+        <div class="no-print" style="display:flex;gap:10px;align-items:flex-end;margin-bottom:16px;flex-wrap:wrap">
+            <div class="form-group" style="margin:0">
+                <label>فلترة حسب التاريخ</label>
+                <form method="GET" action="{{ url_for('audit') }}" style="display:flex;gap:6px">
+                    <input type="date" name="day" value="{{ day }}" class="form-control">
+                    <button class="btn btn-outline" type="submit">تصفية</button>
+                    {% if day %}<a href="{{ url_for('audit') }}" class="btn btn-outline">مسح</a>{% endif %}
+                </form>
+            </div>
+            {% if day %}
+            <a href="{{ url_for('audit_export', day=day) }}" class="btn btn-outline">⬇ تصدير اليوم</a>
+            {% endif %}
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>التاريخ</th><th>المستخدم</th><th>الإجراء</th><th>الكيان</th><th>التفاصيل</th><th>IP</th></tr></thead>
+                <tbody>
+                    {% for l in logs %}
+                    <tr>
+                        <td style="white-space:nowrap;">{{ l.created_at }}</td>
+                        <td><strong>{{ l.username or '-' }}</strong></td>
+                        <td><span class="badge badge-{{ 'danger' if l.action in ['delete','login_failed'] else 'primary' if l.action in ['add'] else 'info' }}">{{ l.action }}</span></td>
+                        <td>{{ l.entity or '-' }}</td>
+                        <td>{{ l.details or '-' }}</td>
+                        <td dir="ltr">{{ l.ip_address or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% if not logs %}
+                    <tr><td colspan="6" class="empty-state"><div class="icon">📋</div><h3>لا توجد سجلات</h3></td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

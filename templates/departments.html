@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}الأقسام{% endblock %}
+{% block header %}إدارة الأقسام{% endblock %}
+{% block actions %}
+<button class="btn btn-primary no-print" onclick="openModal('addModal')">+ قسم جديد</button>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header"><h3>قائمة الأقسام ({{ depts|length }})</h3></div>
+    <div class="card-body">
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>#</th><th>اسم القسم</th><th>المدير</th><th>مركز التكلفة</th><th>عدد الموظفين</th><th></th></tr></thead>
+                <tbody>
+                    {% for d in depts %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td><strong>{{ d.name }}</strong></td>
+                        <td>{{ d.manager or '-' }}</td>
+                        <td>{{ d.cost_center or '-' }}</td>
+                        <td><span class="badge badge-primary">{{ d.emp_count }}</span></td>
+                        <td class="no-print">
+                            {% if current_user.role=='admin' and d.emp_count==0 %}
+                            <form method="POST" action="{{ url_for('delete_department', dep_id=d.id) }}" style="display:inline" onsubmit="return confirm('حذف القسم؟')">
+                                <button class="btn btn-sm btn-danger">حذف</button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="addModal">
+    <div class="modal" style="max-width:450px;">
+        <div class="modal-header"><h3>قسم جديد</h3>
+            <button class="modal-close" onclick="closeModal('addModal')">&times;</button></div>
+        <form method="POST" action="{{ url_for('add_department') }}">
+            <div class="modal-body">
+                <div class="form-group"><label>اسم القسم *</label><input name="name" class="form-control" required></div>
+                <div class="form-group"><label>المدير</label><input name="manager" class="form-control"></div>
+                <div class="form-group"><label>مركز التكلفة</label><input name="cost_center" class="form-control"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary">حفظ</button>
+                <button type="button" class="btn btn-outline" onclick="closeModal('addModal')">إلغاء</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

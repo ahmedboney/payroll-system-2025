@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}الموظفين{% endblock %}
+{% block header %}إدارة الموظفين{% endblock %}
+{% block actions %}
+<button class="btn btn-primary no-print" onclick="openModal('addModal')">+ موظف جديد</button>
+<a href="{{ url_for('export_employees') }}" class="btn btn-outline no-print">⬇ Excel</a>
+{% endblock %}
+
+{% block content %}
+<div class="filter-bar card" style="padding:16px;">
+    <form method="GET" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+        <div class="form-group">
+            <label>بحث</label>
+            <input type="text" name="search" value="{{ request.args.get('search','') }}" class="form-control" placeholder="اسم/كود/رقم قومي" style="width:220px;">
+        </div>
+        <div class="form-group">
+            <label>القسم</label>
+            <select name="department" class="form-control">
+                <option value="">الكل</option>
+                {% for d in depts if d.active %}
+                <option value="{{ d.id }}" {{ 'selected' if dept|string==d.id|string }}>{{ d.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label>الحالة</label>
+            <select name="status" class="form-control">
+                <option value="active" {{ 'selected' if status=='active' }}>نشط فقط</option>
+                <option value="all" {{ 'selected' if status=='all' }}>الكل</option>
+            </select>
+        </div>
+        <button class="btn btn-primary">عرض</button>
+    </form>
+</div>
+
+<div class="card">
+    <div class="card-header"><h3>قائمة الموظفين ({{ emps|length }})</h3></div>
+    <div class="card-body">
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>الكود</th><th>الاسم</th><th>القسم</th><th>الوظيفة</th><th>نوع الأجر</th><th>الأساسي</th><th>البدلات</th><th>الحالة</th><th></th></tr></thead>
+                <tbody>
+                    {% for e in emps %}
+                    <tr>
+                        <td>{{ e.emp_code }}</td>
+                        <td><strong>{{ e.name }}</strong></td>
+                        <td>{{ e.dept_name or '-' }}</td>
+                        <td>{{ e.position or '-' }}</td>
+                        <td>
+                            {% set ptypes = {'monthly':'شهري','daily':'يومي','hourly':'ساعة','commission':'عمولة'} %}
+                            <span class="badge badge-{{ 'primary' if e.pay_type=='monthly' else 'info' if e.pay_type=='daily' else 'warning' if e.pay_type=='hourly' else 'success' }}">{{ ptypes.get(e.pay_type,e.pay_type) }}</span>
+                        </td>
+                        <td class="number-cell">{{ "{:,.0f}".format(e.base_salary if e.pay_type=='monthly' else e.daily_rate if e.pay_type=='daily' else e.hourly_rate) }}</td>
+                        <td class="number-cell">{{ "{:,.0f}".format(e.housing_allowance+e.transport_allowance+e.food_allowance+e.danger_allowance+e.phone_allowance+e.other_allowances) }}</td>
+                        <td><span class="badge badge-{{ 'success' if e.status=='active' else 'gray' }}">{{ 'نشط' if e.status=='active' else e.status }}</span></td>
+                        <td class="no-print">
+                            <a href="{{ url_for('employee_detail', emp_id=e.id) }}" class="btn btn-sm btn-outline">ملف</a>
+                            <button class="btn btn-sm btn-primary" onclick="editEmp({{ e|tojson }})">تعديل</button>
+                            {% if current_user.role=='admin' %}
+                            <form method="POST" action="{{ url_for('delete_employee', emp_id=e.id) }}" style="display:inline" onsubmit="return confirm('حذف موظف؟')">
+                                <button class="btn btn-sm btn-danger">حذف</button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not emps %}
+                    <tr><td colspan="9" class="empty-state"><div class="icon">👥</div><h3>لا يوجد موظفون</h3></td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% include '_employee_form.html' %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+function editEmp(e){
+    document.getElementById('editForm').action='/employees/'+e.id+'/edit';
+    var f=document.querySelector('#editForm');
+    f.querySelector('[name="emp_code"]').value=e.emp_code||'';
+    f.querySelector('[name="name"]').value=e.name||'';
+    f.querySelector('[name="national_id"]').value=e.national_id||'';
+    f.querySelector('[name="department_id"]').value=e.department_id||'';
+    f.querySelector('[name="position"]').value=e.position||'';
+    f.querySelector('[name="phone"]').value=e.phone||'';
+    f.querySelector('[name="email"]').value=e.email||'';
+    f.querySelector('[name="address"]').value=e.address||'';
+    f.querySelector('[name="gender"]').value=e.gender||'male';
+    f.querySelector('[name="birth_date"]').value=e.birth_date||'';
+    f.querySelector('[name="hire_date"]').value=e.hire_date||'';
+    f.querySelector('[name="marital_status"]').value=e.marital_status||'';
+    f.querySelector('[name="bank_name"]').value=e.bank_name||'';
+    f.querySelector('[name="bank_account"]').value=e.bank_account||'';
+    f.querySelector('[name="pay_type"]').value=e.pay_type||'monthly';
+    f.querySelector('[name="base_salary"]').value=e.base_salary||0;
+    f.querySelector('[name="daily_rate"]').value=e.daily_rate||0;
+    f.querySelector('[name="hourly_rate"]').value=e.hourly_rate||0;
+    f.querySelector('[name="commission_rate"]').value=e.commission_rate||0;
+    f.querySelector('[name="housing_allowance"]').value=e.housing_allowance||0;
+    f.querySelector('[name="transport_allowance"]').value=e.transport_allowance||0;
+    f.querySelector('[name="food_allowance"]').value=e.food_allowance||0;
+    f.querySelector('[name="danger_allowance"]').value=e.danger_allowance||0;
+    f.querySelector('[name="phone_allowance"]').value=e.phone_allowance||0;
+    f.querySelector('[name="other_allowances"]').value=e.other_allowances||0;
+    f.querySelector('[name="social_insurance_enabled"]').checked=e.social_insurance_enabled;
+    f.querySelector('[name="income_tax_enabled"]').checked=e.income_tax_enabled;
+    f.querySelector('[name="social_insurance_employee_ratio"]').value=e.social_insurance_employee_ratio||11;
+    f.querySelector('[name="social_insurance_employer_ratio"]').value=e.social_insurance_employer_ratio||18.75;
+    f.querySelector('[name="tax_exempt_amount"]').value=e.tax_exempt_amount||0;
+    f.querySelector('[name="status"]').value=e.status||'active';
+    document.querySelector('#empModalTitle').textContent='تعديل موظف';
+    openModal('addModal');
+}
+</script>
+{% endblock %}

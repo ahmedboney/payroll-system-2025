@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}العمولات{% endblock %}
+{% block header %}العمولات والمبيعات{% endblock %}
+{% block actions %}
+<button class="btn btn-success no-print" onclick="saveCommissions()">💾 حفظ الكل</button>
+{% endblock %}
+
+{% block content %}
+<div class="month-picker">
+    <label style="font-weight:600;">الشهر:</label>
+    <input type="month" id="m" value="{{ month }}" onchange="window.location.href='?month='+this.value">
+</div>
+
+<div class="card">
+    <div class="card-header"><h3>تسجيل العمولات - {{ month }}</h3></div>
+    <div class="card-body">
+        <p style="font-size:.85rem;color:#9ca3af;margin-bottom:12px;">عمولة = قيمة المبيعات × نسبة العمولة. اكتب المبيعات والنسبة، أو اكتب المبلغ مباشرة.</p>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>الكود</th><th>الموظف</th><th>التاريخ</th><th>قيمة المبيعات</th><th>النسبة%</th><th>المبلغ</th></tr></thead>
+                <tbody>
+                    {% for e in emps if e.pay_type=='commission' or e.commission_rate %}
+                    <tr>
+                        <td>{{ e.emp_code }}</td>
+                        <td><strong>{{ e.name }}</strong></td>
+                        <td><input type="date" class="f-date" data-emp="{{ e.id }}" value="{{ month }}-01" style="padding:6px;border:1px solid #d1d5db;border-radius:6px;"></td>
+                        <td><input type="number" class="f-sales" data-emp="{{ e.id }}" min="0" step="0.01" value="0" style="width:110px;padding:6px;border:1px solid #d1d5db;border-radius:6px;"></td>
+                        <td><input type="number" class="f-rate" data-emp="{{ e.id }}" step="0.01" value="{{ e.commission_rate or 0 }}" style="width:70px;padding:6px;border:1px solid #d1d5db;border-radius:6px;"></td>
+                        <td class="number-cell f-amt" data-emp="{{ e.id }}">0</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><h3>السجلات الحالية</h3></div>
+    <div class="card-body">
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>الموظف</th><th>التاريخ</th><th>المبيعات</th><th>النسبة</th><th>المبلغ</th></tr></thead>
+                <tbody>
+                    {% for r in records %}
+                    <tr><td>{{ r.emp_name }}</td><td>{{ r.date }}</td><td>{{ "{:,.0f}".format(r.sales_amount) }}</td><td>{{ r.rate }}%</td><td class="number-cell pos">{{ "{:,.0f}".format(r.amount) }}</td></tr>
+                    {% endfor %}
+                    {% if not records %}<tr><td colspan="5" class="empty-state"><div class="icon">📈</div><h3>لا توجد عمولات</h3></td></tr>{% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function saveCommissions(){
+    var recs=[];
+    document.querySelectorAll('tr').forEach(function(row){
+        var d=row.querySelector('.f-date');
+        if(d){ var sales=parseFloat(row.querySelector('.f-sales').value)||0;
+            var rate=parseFloat(row.querySelector('.f-rate').value)||0;
+            if(sales>0){ recs.push({employee_id:parseInt(d.dataset.emp),date:d.value,
+                sales_amount:sales,rate:rate,amount:sales*rate/100}); } }
+    });
+    fetch('/commissions/save',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({_csrf:'{{ csrf_token() }}',month:'{{ month }}',records:recs})}).then(function(r){if(r.ok)location.reload();});
+}
+</script>
+{% endblock %}

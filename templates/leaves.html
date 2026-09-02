@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}الإجازات{% endblock %}
+{% block header %}إدارة الإجازات{% endblock %}
+{% block actions %}
+<button class="btn btn-primary no-print" onclick="openModal('addModal')">+ طلب إجازة</button>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header"><h3>طلبات الإجازات</h3></div>
+    <div class="card-body">
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>الموظف</th><th>النوع</th><th>من</th><th>إلى</th><th>أيام</th><th>السبب</th><th>الحالة</th><th></th></tr></thead>
+                <tbody>
+                    {% set lt = {'annual':'إجازة سنوية','sick':'مرضية','emergency':'طارئة','unpaid':'بدون أجر','maternity':'وضع وتربية'} %}
+                    {% for r in records %}
+                    <tr>
+                        <td><strong>{{ r.emp_name }}</strong></td>
+                        <td>{{ lt.get(r.leave_type, r.leave_type) }}</td>
+                        <td>{{ r.start_date }}</td>
+                        <td>{{ r.end_date }}</td>
+                        <td>{{ r.days }}</td>
+                        <td>{{ r.reason or '-' }}</td>
+                        <td><span class="badge badge-{{ 'warning' if r.status=='pending' else 'success' if r.status=='approved' else 'danger' }}">{{ r.status }}</span></td>
+                        <td class="no-print">
+                            {% if r.status=='pending' %}
+                            <form method="POST" action="{{ url_for('leave_status', leave_id=r.id, status='approved') }}" style="display:inline">
+                                <button class="btn btn-sm btn-success">اعتماد</button></form>
+                            <form method="POST" action="{{ url_for('leave_status', leave_id=r.id, status='rejected') }}" style="display:inline">
+                                <button class="btn btn-sm btn-danger">رفض</button></form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not records %}
+                    <tr><td colspan="8" class="empty-state"><div class="icon">🏖️</div><h3>لا توجد طلبات</h3></td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="addModal">
+    <div class="modal" style="max-width:480px;">
+        <div class="modal-header"><h3>طلب إجازة</h3>
+            <button class="modal-close" onclick="closeModal('addModal')">&times;</button></div>
+        <form method="POST" action="{{ url_for('add_leave') }}">
+            <div class="modal-body">
+                <div class="form-group"><label>الموظف *</label>
+                    <select name="employee_id" class="form-control" required>
+                        <option value="">-- اختر --</option>
+                        {% for e in emps %}<option value="{{ e.id }}">{{ e.name }}</option>{% endfor %}
+                    </select></div>
+                <div class="form-group"><label>النوع</label>
+                    <select name="leave_type" class="form-control">
+                        <option value="annual">إجازة سنوية</option>
+                        <option value="sick">مرضية</option>
+                        <option value="emergency">طارئة</option>
+                        <option value="unpaid">بدون أجر</option>
+                        <option value="maternity">وضع وتربية</option>
+                    </select></div>
+                <div class="form-row">
+                    <div class="form-group"><label>من</label><input type="date" name="start_date" class="form-control" required></div>
+                    <div class="form-group"><label>إلى</label><input type="date" name="end_date" class="form-control" required></div>
+                    <div class="form-group"><label>عدد الأيام</label><input type="number" name="days" class="form-control" step="0.5" min="0.5" required></div>
+                </div>
+                <div class="form-group"><label>السبب</label><textarea name="reason" class="form-control" rows="2"></textarea></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary">إرسال</button>
+                <button type="button" class="btn btn-outline" onclick="closeModal('addModal')">إلغاء</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

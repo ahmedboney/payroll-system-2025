@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}الخصومات{% endblock %}
+{% block header %}الخصومات المتعددة{% endblock %}
+{% block actions %}
+<button class="btn btn-success no-print" onclick="saveDeductions()">💾 حفظ الكل</button>
+{% endblock %}
+
+{% block content %}
+<div class="month-picker">
+    <label style="font-weight:600;">الشهر:</label>
+    <input type="month" id="m" value="{{ month }}" onchange="window.location.href='?month='+this.value">
+</div>
+
+<div class="card">
+    <div class="card-header"><h3>إضافة خصومات - {{ month }}</h3></div>
+    <div class="card-body">
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>الكود</th><th>الموظف</th><th>التاريخ</th><th>النوع</th><th>المبلغ</th><th>ملاحظات</th></tr></thead>
+                <tbody>
+                    {% for e in emps %}
+                    <tr>
+                        <td>{{ e.emp_code }}</td>
+                        <td><strong>{{ e.name }}</strong></td>
+                        <td><input type="date" class="f-date" data-emp="{{ e.id }}" value="{{ month }}-01" style="padding:6px;border:1px solid #d1d5db;border-radius:6px;"></td>
+                        <td><select class="f-type" data-emp="{{ e.id }}" style="padding:6px;border:1px solid #d1d5db;border-radius:6px;">
+                            {% for t in types %}<option value="{{ t.name }}">{{ t.name }}</option>{% endfor %}
+                        </select></td>
+                        <td><input type="number" class="f-amount" data-emp="{{ e.id }}" min="0" step="0.01" value="0" style="width:100px;padding:6px;border:1px solid #d1d5db;border-radius:6px;"></td>
+                        <td><input type="text" class="f-note" data-emp="{{ e.id }}" style="padding:6px;border:1px solid #d1d5db;border-radius:6px;"></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><h3>السجلات الحالية</h3></div>
+    <div class="card-body">
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>الموظف</th><th>التاريخ</th><th>النوع</th><th>المبلغ</th><th>ملاحظات</th></tr></thead>
+                <tbody>
+                    {% for r in records %}
+                    <tr><td>{{ r.emp_name }}</td><td>{{ r.date }}</td><td>{{ r.deduction_type }}</td><td class="number-cell neg">{{ "{:,.0f}".format(r.amount) }}</td><td>{{ r.note or '-' }}</td></tr>
+                    {% endfor %}
+                    {% if not records %}<tr><td colspan="5" class="empty-state"><div class="icon">📉</div><h3>لا توجد خصومات</h3></td></tr>{% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function saveDeductions(){
+    var recs=[];
+    document.querySelectorAll('tr').forEach(function(row){
+        var d=row.querySelector('.f-date');
+        if(d){ var amt=parseFloat(row.querySelector('.f-amount').value)||0;
+            if(amt>0){ recs.push({employee_id:parseInt(d.dataset.emp),date:d.value,
+                deduction_type:row.querySelector('.f-type').value,amount:amt,
+                note:row.querySelector('.f-note').value}); } }
+    });
+    fetch('/deductions/save',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({_csrf:'{{ csrf_token() }}',month:'{{ month }}',records:recs})}).then(function(r){if(r.ok)location.reload();});
+}
+</script>
+{% endblock %}

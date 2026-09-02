@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}ملف الموظف{% endblock %}
+{% block header %}ملف الموظف - {{ emp.name }}{% endblock %}
+{% block actions %}
+<a href="{{ url_for('employees') }}" class="btn btn-outline no-print">← العودة</a>
+{% endblock %}
+
+{% block content %}
+<div class="stats-grid">
+    <div class="stat-card"><div class="stat-icon blue">💵</div>
+        <div class="stat-info"><h3>{{ "{:,.0f}".format(emp.base_salary if emp.pay_type=='monthly' else emp.daily_rate if emp.pay_type=='daily' else emp.hourly_rate) }}</h3>
+        <p>{{ 'راتب شهري' if emp.pay_type=='monthly' else 'أجر يومي' if emp.pay_type=='daily' else 'أجر ساعة' if emp.pay_type=='hourly' else 'نسبة عمولة' }}</p></div></div>
+    <div class="stat-card"><div class="stat-icon green">📈</div>
+        <div class="stat-info"><h3>{{ "{:,.0f}".format(emp.base_salary+emp.housing_allowance+emp.transport_allowance+emp.food_allowance+emp.danger_allowance+emp.phone_allowance+emp.other_allowances) }}</h3>
+        <p>إجمالي البدلات والمستحقات</p></div></div>
+    <div class="stat-card"><div class="stat-icon cyan">🏢</div>
+        <div class="stat-info"><h3>{{ emp.dept_name or '-' }}</h3><p>القسم</p></div></div>
+    <div class="stat-card"><div class="stat-icon yellow">📋</div>
+        <div class="stat-info"><h3>{{ history|length }}</h3><p>مراجعات راتب</p></div></div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3>بيانات الموظف</h3>
+        <button class="btn btn-primary btn-sm no-print" onclick="openModal('editModal')">تعديل البيانات</button>
+    </div>
+    <div class="card-body">
+        <div class="form-row">
+            <div><strong>الكود:</strong> {{ emp.emp_code }}</div>
+            <div><strong>الاسم:</strong> {{ emp.name }}</div>
+            <div><strong>الرقم القومي:</strong> {{ emp.national_id or '-' }}</div>
+            <div><strong>الوظيفة:</strong> {{ emp.position or '-' }}</div>
+            <div><strong>القسم:</strong> {{ emp.dept_name or '-' }}</div>
+            <div><strong>تاريخ التعيين:</strong> {{ emp.hire_date or '-' }}</div>
+            <div><strong>الهاتف:</strong> {{ emp.phone or '-' }}</div>
+            <div><strong>الحالة:</strong> <span class="badge badge-{{ 'success' if emp.status=='active' else 'gray' }}">{{ emp.status }}</span></div>
+        </div>
+    </div>
+</div>
+
+{% if history %}
+<div class="card">
+    <div class="card-header"><h3>سجل تغيير الرواتب</h3></div>
+    <div class="card-body">
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>التاريخ</th><th>الراتب القديم</th><th>الراتب الجديد</th><th>السبب</th><th>بواسطة</th></tr></thead>
+                <tbody>
+                {% for h in history %}
+                <tr>
+                    <td>{{ h.change_date }}</td>
+                    <td class="number-cell">{{ "{:,.0f}".format(h.old_salary) }}</td>
+                    <td class="number-cell pos">{{ "{:,.0f}".format(h.new_salary) }}</td>
+                    <td>{{ h.reason }}</td>
+                    <td>{{ h.created_by }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="modal-overlay" id="editModal">
+    <div class="modal">
+        <div class="modal-header"><h3>تعديل بيانات الموظف</h3>
+            <button class="modal-close" onclick="closeModal('editModal')">&times;</button></div>
+        <form method="POST" action="{{ url_for('edit_employee', emp_id=emp.id) }}">
+            <div class="modal-body">
+                <div class="form-section"><div class="form-section-title">البيانات الأساسية</div>
+                    <div class="form-row">
+                        <div class="form-group"><label>الكود</label><input name="emp_code" value="{{ emp.emp_code }}" class="form-control"></div>
+                        <div class="form-group"><label>الاسم *</label><input name="name" value="{{ emp.name }}" class="form-control" required></div>
+                        <div class="form-group"><label>الرقم القومي</label><input name="national_id" value="{{ emp.national_id }}" class="form-control"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>القسم</label>
+                            <select name="department_id" class="form-control">
+                                <option value="">--</option>
+                                {% for d in depts if d.active %}
+                                <option value="{{ d.id }}" {{ 'selected' if d.id==emp.department_id }}>{{ d.name }}</option>
+                                {% endfor %}
+                            </select></div>
+                        <div class="form-group"><label>الوظيفة</label><input name="position" value="{{ emp.position }}" class="form-control"></div>
+                        <div class="form-group"><label>الهاتف</label><input name="phone" value="{{ emp.phone }}" class="form-control"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>البريد</label><input name="email" value="{{ emp.email }}" class="form-control"></div>
+                        <div class="form-group"><label>العنوان</label><input name="address" value="{{ emp.address }}" class="form-control"></div>
+                        <div class="form-group"><label>الحالة</label>
+                            <select name="status" class="form-control">
+                                <option value="active" {{ 'selected' if emp.status=='active' }}>نشط</option>
+                                <option value="inactive" {{ 'selected' if emp.status=='inactive' }}>غير نشط</option>
+                                <option value="terminated" {{ 'selected' if emp.status=='terminated' }}>منتهي</option>
+                            </select></div>
+                    </div>
+                </div>
+                <div class="form-section"><div class="form-section-title">الأجر</div>
+                    <div class="form-row">
+                        <div class="form-group"><label>نوع الأجر</label>
+                            <select name="pay_type" class="form-control">
+                                <option value="monthly" {{ 'selected' if emp.pay_type=='monthly' }}>شهري</option>
+                                <option value="daily" {{ 'selected' if emp.pay_type=='daily' }}>يومي</option>
+                                <option value="hourly" {{ 'selected' if emp.pay_type=='hourly' }}>ساعة</option>
+                                <option value="commission" {{ 'selected' if emp.pay_type=='commission' }}>عمولة</option>
+                            </select></div>
+                        <div class="form-group"><label>الأساسي الشهري</label><input name="base_salary" value="{{ emp.base_salary }}" class="form-control" step="0.01"></div>
+                        <div class="form-group"><label>اليومي</label><input name="daily_rate" value="{{ emp.daily_rate }}" class="form-control" step="0.01"></div>
+                        <div class="form-group"><label>الساعة</label><input name="hourly_rate" value="{{ emp.hourly_rate }}" class="form-control" step="0.01"></div>
+                        <div class="form-group"><label>نسبة العمولة%</label><input name="commission_rate" value="{{ emp.commission_rate }}" class="form-control" step="0.01"></div>
+                    </div>
+                    <div class="form-row" style="margin-top:10px;">
+                        <div class="form-group"><label>سبب تغيير الراتب</label><input name="salary_change_reason" class="form-control" placeholder="اختياري إذا غيّرت الأساسي"></div>
+                    </div>
+                </div>
+                <div class="form-section"><div class="form-section-title">البدلات</div>
+                    <div class="form-row">
+                        <div class="form-group"><label>سكن</label><input name="housing_allowance" value="{{ emp.housing_allowance }}" class="form-control" step="0.01"></div>
+                        <div class="form-group"><label>نقل</label><input name="transport_allowance" value="{{ emp.transport_allowance }}" class="form-control" step="0.01"></div>
+                        <div class="form-group"><label>طعام</label><input name="food_allowance" value="{{ emp.food_allowance }}" class="form-control" step="0.01"></div>
+                        <div class="form-group"><label>خطر</label><input name="danger_allowance" value="{{ emp.danger_allowance }}" class="form-control" step="0.01"></div>
+                        <div class="form-group"><label>موبايل</label><input name="phone_allowance" value="{{ emp.phone_allowance }}" class="form-control" step="0.01"></div>
+                        <div class="form-group"><label>أخرى</label><input name="other_allowances" value="{{ emp.other_allowances }}" class="form-control" step="0.01"></div>
+                    </div>
+                </div>
+                <div class="form-section"><div class="form-section-title">التأمينات والضرائب</div>
+                    <div class="checkbox-group" style="margin-bottom:12px;">
+                        <label><input type="checkbox" name="social_insurance_enabled" {{ 'checked' if emp.social_insurance_enabled }}> تأمين</label>
+                        <label><input type="checkbox" name="income_tax_enabled" {{ 'checked' if emp.income_tax_enabled }}> ضريبة</label>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>تأمين الموظف%</label><input name="social_insurance_employee_ratio" value="{{ emp.social_insurance_employee_ratio }}" class="form-control" step="0.01"></div>
+                        <div class="form-group"><label>تأمين الشركة%</label><input name="social_insurance_employer_ratio" value="{{ emp.social_insurance_employer_ratio }}" class="form-control" step="0.01"></div>
+                        <div class="form-group"><label>إعفاء ضريبي</label><input name="tax_exempt_amount" value="{{ emp.tax_exempt_amount }}" class="form-control" step="0.01"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary">حفظ</button>
+                <button type="button" class="btn btn-outline" onclick="closeModal('editModal')">إلغاء</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}المستخدمين{% endblock %}
+{% block header %}إدارة المستخدمين{% endblock %}
+{% block actions %}
+<button class="btn btn-primary no-print" onclick="openModal('addModal')">+ مستخدم</button>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header"><h3>مستخدمي النظام</h3></div>
+    <div class="card-body">
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>#</th><th>اسم المستخدم</th><th>الاسم الكامل</th><th>الصلاحية</th><th>الحالة</th><th></th></tr></thead>
+                <tbody>
+                    {% for u in users %}
+                    <tr>
+                        <td>{{ u.id }}</td>
+                        <td><strong>{{ u.username }}</strong></td>
+                        <td>{{ u.full_name or '-' }}</td>
+                        <td><span class="badge badge-{{ 'danger' if u.role=='admin' else 'info' }}">{{ 'مدير' if u.role=='admin' else 'مستخدم' }}</span></td>
+                        <td><span class="badge badge-{{ 'success' if u.active else 'gray' }}">{{ 'نشط' if u.active else 'موقوف' }}</span></td>
+                        <td class="no-print" style="display:flex;gap:0.3rem;flex-wrap:wrap">
+                            {% if u.id != current_user.id %}
+                            <form method="POST" action="{{ url_for('toggle_user', uid=u.id) }}" style="display:inline">
+                                <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                                <button class="btn btn-sm btn-{{ 'warning' if u.active else 'success' }}" title="{{ 'تعطيل' if u.active else 'تفعيل' }}">
+                                    <i class="fas fa-{{ 'ban' if u.active else 'check' }}"></i>
+                                </button>
+                            </form>
+                            <form method="POST" action="{{ url_for('delete_user', uid=u.id) }}" style="display:inline" onsubmit="return confirm('حذف المستخدم؟')">
+                                <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                                <button class="btn btn-sm btn-danger">حذف</button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="addModal">
+    <div class="modal" style="max-width:430px;">
+        <div class="modal-header"><h3>مستخدم جديد</h3>
+            <button class="modal-close" onclick="closeModal('addModal')">&times;</button></div>
+        <form method="POST" action="{{ url_for('add_user') }}">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <div class="modal-body">
+                <div class="form-group"><label>اسم المستخدم *</label><input name="username" class="form-control" required></div>
+                <div class="form-group"><label>كلمة المرور *</label><input type="password" name="password" class="form-control" required></div>
+                <div class="form-group"><label>الاسم الكامل</label><input name="full_name" class="form-control"></div>
+                <div class="form-group"><label>الصلاحية</label>
+                    <select name="role" class="form-control"><option value="user">مستخدم</option><option value="admin">مدير</option></select></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary">حفظ</button>
+                <button type="button" class="btn btn-outline" onclick="closeModal('addModal')">إلغاء</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

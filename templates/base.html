@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>{% block title %}نظام المرتبات الشامل{% endblock %}</title>
+<link rel="icon" href="{{ url_for('static', filename='img/favicon.png') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <h2>{{ sys_settings.company_name or 'نظام المرتبات' }}</h2>
+        <small>Payroll System</small>
+        <small class="sidebar-credit">ⓒ محاسب / أحمد عبد الله</small>
+    </div>
+    {% if current_user %}
+    <div class="sidebar-user">
+        👤 {{ current_user.full_name or current_user.username }}
+        <span class="badge badge-primary">{{ 'مدير' if current_user.role=='admin' else 'مستخدم' }}</span>
+    </div>
+    {% endif %}
+    <nav>
+        <div class="menu-section">عام</div>
+        <a href="{{ url_for('dashboard') }}" class="menu-item {{ 'active' if request.endpoint=='dashboard' }}"><span class="icon">📊</span>لوحة التحكم</a>
+
+        <div class="menu-section">الموظفون</div>
+        <a href="{{ url_for('employees') }}" class="menu-item {{ 'active' if request.endpoint in ['employees','employee_detail'] }}"><span class="icon">👥</span>الموظفين</a>
+        <a href="{{ url_for('departments') }}" class="menu-item {{ 'active' if request.endpoint=='departments' }}"><span class="icon">🏢</span>الأقسام</a>
+        <a href="{{ url_for('contracts') }}" class="menu-item {{ 'active' if request.endpoint=='contracts' }}"><span class="icon">📝</span>العقود</a>
+
+        <div class="menu-section">الحضور والعمل</div>
+        <a href="{{ url_for('attendance') }}" class="menu-item {{ 'active' if request.endpoint=='attendance' }}"><span class="icon">✅</span>الحضور والغياب</a>
+        <a href="{{ url_for('leaves') }}" class="menu-item {{ 'active' if request.endpoint=='leaves' }}"><span class="icon">🏖️</span>الإجازات</a>
+        <a href="{{ url_for('overtime') }}" class="menu-item {{ 'active' if request.endpoint=='overtime' }}"><span class="icon">⏰</span>الإضافي</a>
+        <a href="{{ url_for('commissions') }}" class="menu-item {{ 'active' if request.endpoint=='commissions' }}"><span class="icon">📈</span>العمولات</a>
+
+        <div class="menu-section">المالية</div>
+        <a href="{{ url_for('deductions') }}" class="menu-item {{ 'active' if request.endpoint=='deductions' }}"><span class="icon">📉</span>الخصومات</a>
+        <a href="{{ url_for('advances') }}" class="menu-item {{ 'active' if request.endpoint=='advances' }}"><span class="icon">💰</span>السلف</a>
+        <a href="{{ url_for('bulk_incentives') }}" class="menu-item {{ 'active' if request.endpoint=='bulk_incentives' }}"><span class="icon">🎯</span>حوافز/خصومات جماعية</a>
+
+        <div class="menu-section">المرتبات</div>
+        <a href="{{ url_for('payroll') }}" class="menu-item {{ 'active' if request.endpoint=='payroll' }}"><span class="icon">🧾</span>حساب المرتبات</a>
+
+        <div class="menu-section">التقارير</div>
+        <a href="{{ url_for('reports') }}" class="menu-item {{ 'active' if request.endpoint=='reports' }}"><span class="icon">📄</span>كشف المرتبات</a>
+        <a href="{{ url_for('dept_report') }}" class="menu-item {{ 'active' if request.endpoint=='dept_report' }}"><span class="icon">📈</span>تقرير الأقسام</a>
+        <a href="{{ url_for('annual_report') }}" class="menu-item {{ 'active' if request.endpoint=='annual_report' }}"><span class="icon">📊</span>التقرير السنوي</a>
+        <a href="{{ url_for('comparison') }}" class="menu-item {{ 'active' if request.endpoint=='comparison' }}"><span class="icon">⚖️</span>مقارنة شهرين</a>
+        <a href="{{ url_for('signatures_log') }}" class="menu-item {{ 'active' if request.endpoint=='signatures_log' }}"><span class="icon">✍️</span>سجل التوقيعات</a>
+        {% if current_user.role=='admin' %}
+        <a href="{{ url_for('audit') }}" class="menu-item {{ 'active' if request.endpoint=='audit' }}"><span class="icon">📋</span>سجل التدقيق</a>
+        {% endif %}
+
+        <div class="menu-section">الإعدادات</div>
+        <a href="{{ url_for('settings') }}" class="menu-item {{ 'active' if request.endpoint=='settings' }}"><span class="icon">⚙️</span>الإعدادات</a>
+        {% if current_user.role=='admin' %}
+        <a href="{{ url_for('users') }}" class="menu-item {{ 'active' if request.endpoint=='users' }}"><span class="icon">🔐</span>المستخدمين</a>
+        {% endif %}
+        <a href="{{ url_for('guide') }}" class="menu-item {{ 'active' if request.endpoint=='guide' }}"><span class="icon">📖</span>دليل الاستخدام</a>
+        <a href="{{ url_for('logout') }}" class="menu-item"><span class="icon">🚪</span>تسجيل الخروج</a>
+    </nav>
+</aside>
+
+<div class="main-content">
+    <header class="header">
+        <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+        <h2 class="header-title">{% block header %}{% endblock %}</h2>
+        <div class="header-actions">
+            <button id="themeToggle" class="theme-toggle" title="تبديل الوضع الليلي/النهاري" onclick="toggleTheme()">🌙</button>
+            {% block actions %}{% endblock %}
+        </div>
+    </header>
+    <div class="content">
+        {% with messages=get_flashed_messages(with_categories=true) %}
+            {% for cat,msg in messages %}
+                <div class="alert alert-{{ 'danger' if cat=='error' else 'success' }}">{{ msg }}</div>
+            {% endfor %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+        <footer class="site-footer">
+            <span>نظام المرتبات الشامل — Payroll System</span>
+            <span>جميع الحقوق محفوظة © 2026 <strong>محاسب / أحمد عبد الله</strong></span>
+        </footer>
+    </div>
+</div>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

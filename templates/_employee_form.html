@@ -1,0 +1,109 @@
+<div class="modal-overlay" id="addModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="empModalTitle">إضافة موظف جديد</h3>
+            <button class="modal-close" onclick="closeModal('addModal')">&times;</button>
+        </div>
+        <form id="editForm" method="POST" action="{{ url_for('add_employee') }}">
+            <div class="modal-body">
+                <div class="form-section">
+                    <div class="form-section-title">البيانات الأساسية</div>
+                    <div class="form-row">
+                        <div class="form-group"><label>كود الموظف</label>
+                            <input type="text" name="emp_code" class="form-control" placeholder="فارغ = تلقائي"></div>
+                        <div class="form-group"><label>الاسم *</label>
+                            <input type="text" name="name" class="form-control" required></div>
+                        <div class="form-group"><label>الرقم القومي</label>
+                            <input type="text" name="national_id" class="form-control"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>القسم</label>
+                            <select name="department_id" class="form-control">
+                                <option value="">-- اختر --</option>
+                                {% for d in depts if d.active %}
+                                <option value="{{ d.id }}">{{ d.name }}</option>
+                                {% endfor %}
+                            </select></div>
+                        <div class="form-group"><label>الوظيفة</label>
+                            <input type="text" name="position" class="form-control"></div>
+                        <div class="form-group"><label>الجنس</label>
+                            <select name="gender" class="form-control"><option value="male">ذكر</option><option value="female">أنثى</option></select></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>تاريخ الميلاد</label><input type="date" name="birth_date" class="form-control"></div>
+                        <div class="form-group"><label>تاريخ التعيين</label><input type="date" name="hire_date" class="form-control" value="{{ today }}"></div>
+                        <div class="form-group"><label>الحالة الاجتماعية</label>
+                            <select name="marital_status" class="form-control"><option value="">--</option><option>أعزب</option><option>متزوج</option><option>مطلق</option><option>أرمل</option></select></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>الهاتف</label><input type="text" name="phone" class="form-control"></div>
+                        <div class="form-group"><label>البريد</label><input type="email" name="email" class="form-control"></div>
+                        <div class="form-group"><label>العنوان</label><input type="text" name="address" class="form-control"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>البنك</label><input type="text" name="bank_name" class="form-control"></div>
+                        <div class="form-group"><label>رقم الحساب</label><input type="text" name="bank_account" class="form-control"></div>
+                        <div class="form-group"><label>الحالة</label>
+                            <select name="status" class="form-control"><option value="active">نشط</option><option value="inactive">غير نشط</option><option value="terminated">منتهي</option></select></div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="form-section-title">نوع الأجر وحساب الراتب</div>
+                    <div class="form-row">
+                        <div class="form-group"><label>نوع الأجر</label>
+                            <select name="pay_type" class="form-control" onchange="togglePay(this.value)">
+                                <option value="monthly">شهري ثابت</option>
+                                <option value="daily">يومي</option>
+                                <option value="hourly">بالساعة</option>
+                                <option value="commission">عمولة</option>
+                            </select></div>
+                        <div class="form-group pay-monthly"><label>الراتب الأساسي الشهري</label><input type="number" name="base_salary" class="form-control" step="0.01" value="0"></div>
+                        <div class="form-group pay-daily hidden"><label>الأجر اليومي</label><input type="number" name="daily_rate" class="form-control" step="0.01" value="0"></div>
+                        <div class="form-group pay-hourly hidden"><label>أجر الساعة</label><input type="number" name="hourly_rate" class="form-control" step="0.01" value="0"></div>
+                        <div class="form-group pay-commission hidden"><label>نسبة العمولة (%)</label><input type="number" name="commission_rate" class="form-control" step="0.01" value="0"></div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="form-section-title">البدلات</div>
+                    <div class="form-row">
+                        <div class="form-group"><label>بدل سكن</label><input type="number" name="housing_allowance" class="form-control" step="0.01" value="0"></div>
+                        <div class="form-group"><label>بدل نقل</label><input type="number" name="transport_allowance" class="form-control" step="0.01" value="0"></div>
+                        <div class="form-group"><label>بدل طعام</label><input type="number" name="food_allowance" class="form-control" step="0.01" value="0"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>بدل خطر</label><input type="number" name="danger_allowance" class="form-control" step="0.01" value="0"></div>
+                        <div class="form-group"><label>بدل موبايل</label><input type="number" name="phone_allowance" class="form-control" step="0.01" value="0"></div>
+                        <div class="form-group"><label>بدلات أخرى</label><input type="number" name="other_allowances" class="form-control" step="0.01" value="0"></div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="form-section-title">التأمينات والضرائب</div>
+                    <div class="checkbox-group" style="margin-bottom:12px;">
+                        <label><input type="checkbox" name="social_insurance_enabled" checked> تأمين اجتماعي</label>
+                        <label><input type="checkbox" name="income_tax_enabled" checked> ضريبة كسب عمل</label>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>نسبة تأمين الموظف (%)</label><input type="number" name="social_insurance_employee_ratio" class="form-control" step="0.01" value="11"></div>
+                        <div class="form-group"><label>نسبة تأمين الشركة (%)</label><input type="number" name="social_insurance_employer_ratio" class="form-control" step="0.01" value="18.75"></div>
+                        <div class="form-group"><label>إعفاء ضريبي شهري</label><input type="number" name="tax_exempt_amount" class="form-control" step="0.01" value="0"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary">حفظ</button>
+                <button type="button" class="btn btn-outline" onclick="closeModal('addModal')">إلغاء</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>.hidden{display:none;}</style>
+<script>
+function togglePay(t){
+    document.querySelectorAll('.pay-monthly,.pay-daily,.pay-hourly,.pay-commission').forEach(function(el){el.classList.add('hidden');});
+    document.querySelector('.pay-'+t).classList.remove('hidden');
+}
+</script>

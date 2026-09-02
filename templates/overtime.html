@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}الإضافي{% endblock %}
+{% block header %}ساعات الإضافي{% endblock %}
+{% block actions %}
+<button class="btn btn-success no-print" onclick="saveOvertime()">💾 حفظ الكل</button>
+{% endblock %}
+
+{% block content %}
+<div class="month-picker">
+    <label style="font-weight:600;">الشهر:</label>
+    <input type="month" id="m" value="{{ month }}" onchange="window.location.href='?month='+this.value">
+</div>
+
+<div class="card">
+    <div class="card-header"><h3>تسجيل الإضافي - {{ month }}</h3></div>
+    <div class="card-body">
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>الكود</th><th>الموظف</th><th>التاريخ</th><th>الساعات</th><th>سعر الساعة</th><th>المبلغ</th></tr></thead>
+                <tbody>
+                    {% for e in emps %}
+                    {% set daily = e.base_salary/26 if e.pay_type=='monthly' else e.daily_rate %}
+                    {% set hr = (daily/8) if daily else 0 %}
+                    <tr>
+                        <td>{{ e.emp_code }}</td>
+                        <td><strong>{{ e.name }}</strong></td>
+                        <td><input type="date" class="f-date" data-emp="{{ e.id }}" value="{{ month }}-01" style="padding:6px;border:1px solid #d1d5db;border-radius:6px;"></td>
+                        <td><input type="number" class="f-hours" data-emp="{{ e.id }}" min="0" step="0.5" value="0" style="width:70px;padding:6px;border:1px solid #d1d5db;border-radius:6px;"></td>
+                        <td><input type="number" class="f-rate" data-emp="{{ e.id }}" step="0.01" value="{{ hr }}" style="width:90px;padding:6px;border:1px solid #d1d5db;border-radius:6px;"></td>
+                        <td class="number-cell f-amt" data-emp="{{ e.id }}">0</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><h3>السجلات الحالية</h3></div>
+    <div class="card-body">
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>الموظف</th><th>التاريخ</th><th>الساعات</th><th>الكمية</th><th>المبلغ</th></tr></thead>
+                <tbody>
+                    {% for r in records %}
+                    <tr><td>{{ r.emp_name }}</td><td>{{ r.date }}</td><td>{{ r.hours }}</td><td>{{ r.hourly_rate }}</td><td class="number-cell pos">{{ "{:,.0f}".format(r.amount) }}</td></tr>
+                    {% endfor %}
+                    {% if not records %}<tr><td colspan="5" class="empty-state"><div class="icon">⏰</div><h3>لا توجد سجلات</h3></td></tr>{% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function saveOvertime(){
+    var recs=[];
+    document.querySelectorAll('tr').forEach(function(row){
+        var d=row.querySelector('.f-date');
+        if(d){ var h=parseFloat(row.querySelector('.f-hours').value)||0;
+            if(h>0){ var rate=parseFloat(row.querySelector('.f-rate').value)||0;
+            recs.push({employee_id:parseInt(d.dataset.emp),date:d.value,hours:h,rate_type:'manual',
+                hourly_rate:rate,amount:h*rate}); } }
+    });
+    fetch('/overtime/save',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({_csrf:'{{ csrf_token() }}',month:'{{ month }}',records:recs})}).then(function(r){if(r.ok)location.reload();});
+}
+</script>
+{% endblock %}

@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}كشف المرتبات الشهري{% endblock %}
+{% block header %}كشف المرتبات الشهري{% endblock %}
+{% block actions %}
+<div class="no-print" style="display:flex;gap:10px;">
+    <form method="POST" action="{{ url_for('export_payroll') }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <input type="hidden" name="month" value="{{ month }}">
+        <button class="btn btn-outline">⬇ تصدير Excel</button>
+    </form>
+    <button class="btn btn-outline" onclick="window.print()">🖨️ طباعة</button>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="month-picker no-print">
+    <label style="font-weight:600;">الشهر:</label>
+    <input type="month" id="m" value="{{ month }}" onchange="window.location.href='?month='+this.value">
+</div>
+
+{% if data %}
+{% set tot_gross = data|sum(attribute='gross') %}
+{% set tot_ded = data|sum(attribute='total_deductions') %}
+{% set tot_net = data|sum(attribute='net') %}
+{% set tot_si = data|sum(attribute='si_employee') %}
+{% set tot_tax = data|sum(attribute='income_tax') %}
+
+<div class="stats-grid">
+    <div class="stat-card"><div class="stat-icon blue">👥</div><div class="stat-info"><h3>{{ data|length }}</h3><p>الموظفون</p></div></div>
+    <div class="stat-card"><div class="stat-icon green">💵</div><div class="stat-info"><h3>{{ "{:,.0f}".format(tot_gross) }}</h3><p>إجمالي المستحق</p></div></div>
+    <div class="stat-card"><div class="stat-icon yellow">📉</div><div class="stat-info"><h3>{{ "{:,.0f}".format(tot_ded) }}</h3><p>إجمالي الخصومات</p></div></div>
+    <div class="stat-card" style="background:var(--primary-light);"><div class="stat-icon"><span style="font-size:1.4rem;">🧾</span></div><div class="stat-info"><h3 style="color:var(--primary-dark);">{{ "{:,.0f}".format(tot_net) }}</h3><p>صافي المرتبات</p></div></div>
+</div>
+
+<div class="card">
+    <div class="card-header"><h3>كشف مرتبات شهر {{ month }}</h3></div>
+    <div class="card-body">
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>#</th><th>الكود</th><th>الاسم</th><th>القسم</th><th>الأساسي</th><th>البدلات</th><th>إضافي</th><th>عمولة</th>
+                        <th>المستحق</th><th>تأمينات</th><th>ضرائب</th><th>سلف</th><th>غياب</th><th>أخرى</th>
+                        <th>إجمالي الخصومات</th><th>الصافي</th></tr>
+                </thead>
+                <tbody>
+                    {% for r in data %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ r.emp_code }}</td>
+                        <td><strong>{{ r.name }}</strong></td>
+                        <td>{{ r.dept_name or '-' }}</td>
+                        <td class="number-cell">{{ "{:,.0f}".format(r.base) }}</td>
+                        <td class="number-cell">{{ "{:,.0f}".format(r.allowances) }}</td>
+                        <td class="number-cell pos">{{ "{:,.0f}".format(r.overtime_amt) }}</td>
+                        <td class="number-cell pos">{{ "{:,.0f}".format(r.commissions) }}</td>
+                        <td class="number-cell total">{{ "{:,.0f}".format(r.gross) }}</td>
+                        <td class="number-cell neg">{{ "{:,.0f}".format(r.si_employee) }}</td>
+                        <td class="number-cell neg">{{ "{:,.0f}".format(r.income_tax) }}</td>
+                        <td class="number-cell neg">{{ "{:,.0f}".format(r.advance_installments) }}</td>
+                        <td class="number-cell neg">{{ "{:,.0f}".format(r.absence_deduction) }}</td>
+                        <td class="number-cell neg">{{ "{:,.0f}".format(r.late_deduction+r.other_deductions) }}</td>
+                        <td class="number-cell neg">{{ "{:,.0f}".format(r.total_deductions) }}</td>
+                        <td class="number-cell total">{{ "{:,.0f}".format(r.net) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="totals-row">
+                        <td colspan="4" style="text-align:center;">الإجمالي</td>
+                        <td class="number-cell">{{ "{:,.0f}".format(data|sum(attribute='base')) }}</td>
+                        <td class="number-cell">{{ "{:,.0f}".format(data|sum(attribute='allowances')) }}</td>
+                        <td class="number-cell pos">{{ "{:,.0f}".format(data|sum(attribute='overtime_amt')) }}</td>
+                        <td class="number-cell pos">{{ "{:,.0f}".format(data|sum(attribute='commissions')) }}</td>
+                        <td class="number-cell total">{{ "{:,.0f}".format(tot_gross) }}</td>
+                        <td class="number-cell neg">{{ "{:,.0f}".format(tot_si) }}</td>
+                        <td class="number-cell neg">{{ "{:,.0f}".format(tot_tax) }}</td>
+                        <td class="number-cell neg">{{ "{:,.0f}".format(data|sum(attribute='advance_installments')) }}</td>
+                        <td class="number-cell neg">{{ "{:,.0f}".format(data|sum(attribute='absence_deduction')) }}</td>
+                        <td class="number-cell neg">{{ "{:,.0f}".format(data|sum(attribute='late_deduction')+data|sum(attribute='other_deductions')) }}</td>
+                        <td class="number-cell neg">{{ "{:,.0f}".format(tot_ded) }}</td>
+                        <td class="number-cell total">{{ "{:,.0f}".format(tot_net) }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        <div style="margin-top:14px;font-size:.8rem;color:var(--gray-600);">
+            <div>حصة الشركة في التأمينات: {{ "{:,.0f}".format(data|sum(attribute='si_employer')) }}</div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="card"><div class="card-body"><div class="empty-state"><div class="icon">📄</div><h3>لا توجد بيانات لهذا الشهر</h3></div></div></div>
+{% endif %}
+{% endblock %}

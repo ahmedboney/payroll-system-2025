@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Database & secrets (لا ترفع قاعدة البيانات ومفتاح الجلسة للجيت هاب)
+*.db
+*.sqlite
+*.sqlite3
+.secret_key
+backups/
+
+# Development helpers (أدوات تجريبية)
+_chk.py
+_shots.py
+_mkicon.py
+_*.py
+
+# OS / editor
+Thumbs.db
+.DS_Store
+*.log
+.idea/
+.vscode/

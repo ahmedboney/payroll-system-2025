@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>تسجيل الدخول - نظام المرتبات</title>
+<link rel="icon" href="{{ url_for('static', filename='img/favicon.png') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<style>
+body{ display:flex; align-items:center; justify-content:center; min-height:100vh;
+    background:linear-gradient(135deg,#1e3a5f,#2563eb); }
+.login-card{ background:#fff; border-radius:16px; padding:40px; width:100%; max-width:410px; box-shadow:0 20px 60px rgba(0,0,0,.35); }
+.login-head{ text-align:center; margin-bottom:28px; }
+.login-head .logo{ font-size:3rem; }
+.login-head h1{ font-size:1.35rem; color:var(--gray-800); }
+.login-head p{ color:#9ca3af; font-size:.9rem; }
+.login-btn{ width:100%; justify-content:center; padding:13px; font-size:1rem; margin-top:6px; }
+</style>
+</head>
+<body>
+<div class="login-card">
+    <div class="login-head">
+        <div class="logo">💰</div>
+        <h1>نظام المرتبات الشامل</h1>
+        <p>Payroll Management System</p>
+    </div>
+    {% with messages=get_flashed_messages(with_categories=true) %}
+        {% for cat,msg in messages %}
+            <div class="alert alert-{{ 'danger' if cat=='error' else 'success' }}">{{ msg }}</div>
+        {% endfor %}
+    {% endwith %}
+    <form method="POST" action="{{ url_for('login') }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+        <div class="form-group">
+            <label>اسم المستخدم</label>
+            <input type="text" name="username" class="form-control" required autofocus autocomplete="username">
+        </div>
+        <div class="form-group">
+            <label>كلمة المرور</label>
+            <input type="password" name="password" class="form-control" required autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn btn-primary login-btn">تسجيل الدخول</button>
+    </form>
+    <div style="text-align:center;margin-top:18px;font-size:.78rem;color:#9ca3af;">
+        نظام آمن — يُرجى استخدام بيانات الدخول الخاصة بك
+    </div>
+    <div style="text-align:center;margin-top:10px;font-size:.72rem;color:#b0b8c4;">
+        جميع الحقوق محفوظة © 2026 محاسب / أحمد عبد الله
+    </div>
+</div>
+</body>
+</html>

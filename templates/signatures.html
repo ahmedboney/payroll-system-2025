@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}سجل التوقيعات{% endblock %}
+{% block header %}سجل توقيعات استلام المرتبات{% endblock %}
+{% block actions %}
+<div class="no-print" style="display:flex;gap:10px;">
+    <button class="btn btn-outline" onclick="window.print()">🖨️ طباعة</button>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="month-picker no-print">
+    <label style="font-weight:600;">الشهر:</label>
+    <input type="month" id="m" value="{{ month }}" onchange="window.location.href='?month='+this.value">
+</div>
+
+{% set signed_count = signs|length %}
+<div class="stats-grid">
+    <div class="stat-card"><div class="stat-icon green">✍️</div><div class="stat-info"><h3>{{ signed_count }}</h3><p>توقيعات مسجلة</p></div></div>
+</div>
+
+<div class="card">
+    <div class="card-header"><h3>توقيعات استلام المرتبات - {{ month }}</h3></div>
+    <div class="card-body">
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>الموظف</th><th>رقم القسيمة</th><th>إجمالي المستحق</th><th>الصافي</th><th>تاريخ التوقيع</th><th>ملاحظات</th></tr></thead>
+                <tbody>
+                    {% for s in signs %}
+                    <tr>
+                        <td><strong>{{ s.emp_name }}</strong> <span class="text-muted">({{ s.emp_code }})</span></td>
+                        <td>{{ s.slip_number }}</td>
+                        <td class="number-cell">{{ "{:,.2f}".format(s.gross_salary) }}</td>
+                        <td class="number-cell total">{{ "{:,.2f}".format(s.net_salary) }}</td>
+                        <td>{{ s.sign_date }}</td>
+                        <td>{{ s.notes or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% if not signs %}
+                    <tr><td colspan="6" class="empty-state"><div class="icon">✍️</div><h3>لا توجد توقيعات لهذا الشهر</h3>
+                        <p>يتم تسجيل التوقيعات عند استلام الموظفين لمرتباتهم من صفحة الإيصال.</p></td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

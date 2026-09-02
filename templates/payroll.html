@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}حساب المرتبات{% endblock %}
+{% block header %}حساب المرتبات الشهري{% endblock %}
+{% block actions %}
+<div style="display:flex;gap:10px;" class="no-print">
+    <button class="btn btn-success" onclick="savePayroll()">💾 حفظ المرتبات</button>
+    <form method="POST" action="{{ url_for('confirm_payroll') }}" style="display:inline" onsubmit="return confirm('اعتماد صرف المرتبات؟')">
+        <input type="hidden" name="month" value="{{ month }}">
+        <button class="btn btn-primary">✅ اعتماد الصرف</button>
+    </form>
+    <form method="POST" action="{{ url_for('export_payroll') }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <input type="hidden" name="month" value="{{ month }}">
+        <button class="btn btn-outline">⬇ تصدير Excel</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="month-picker no-print">
+    <label style="font-weight:600;">الشهر:</label>
+    <input type="month" id="m" value="{{ month }}" onchange="window.location.href='?month='+this.value">
+</div>
+
+{% if data %}
+{% set tot_base = data|sum(attribute='base') %}
+{% set tot_allow = data|sum(attribute='allowances') %}
+{% set tot_ot = data|sum(attribute='overtime_amt') %}
+{% set tot_comm = data|sum(attribute='commissions') %}
+{% set tot_gross = data|sum(attribute='gross') %}
+{% set tot_si = data|sum(attribute='si_employee') %}
+{% set tot_tax = data|sum(attribute='income_tax') %}
+{% set tot_adv = data|sum(attribute='advance_installments') %}
+{% set tot_abs = data|sum(attribute='absence_deduction') %}
+{% set tot_late = data|sum(attribute='late_deduction') %}
+{% set tot_other = data|sum(attribute='other_deductions') %}
+{% set tot_ded = data|sum(attribute='total_deductions') %}
+{% set tot_net = data|sum(attribute='net') %}
+
+<div class="stats-grid">
+    <div class="stat-card"><div class="stat-icon blue">👥</div><div class="stat-info"><h3>{{ data|length }}</h3><p>الموظفون</p></div></div>
+    <div class="stat-card"><div class="stat-icon green">💵</div><div class="stat-info"><h3>{{ "{:,.0f}".format(tot_base) }}</h3><p>الأساسي</p></div></div>
+    <div class="stat-card"><div class="stat-icon cyan">📈</div><div class="stat-info"><h3>{{ "{:,.0f}".format(tot_gross) }}</h3><p>إجمالي المستحق</p></div></div>
+    <div class="stat-card"><div class="stat-icon red">📉</div><div class="stat-info"><h3>{{ "{:,.0f}".format(tot_ded) }}</h3><p>إجمالي الخصومات</p></div></div>
+    <div class="stat-card" style="background:var(--primary-light);"><div class="stat-icon"><span style="font-size:1.4rem;">🧾</span></div><div class="stat-info"><h3 style="color:var(--primary-dark);">{{ "{:,.0f}".format(tot_net) }}</h3><p>صافي المرتبات</p></div></div>
+</div>
+
+<div class="card">
+    <div class="card-header"><h3>كشف المرتبات - {{ month }} ({{ sys_settings.currency or 'ج.م' }})</h3>
+        <span class="badge badge-info">الدخل السنوي تقديري لحساب الضريبة</span></div>
+    <div class="card-body">
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>الكود</th><th>الاسم</th><th>القسم</th><th>نوع</th>
+                        <th>الأساسي</th><th>البدلات</th><th>إضافي</th><th>عمولة</th>
+                        <th>المستحق</th>
+                        <th>تأمينات</th><th>ضرائب</th><th>سلف</th><th>غياب</th><th>تأخير</th><th>أخرى</th>
+                        <th>الخصومات</th><th>الصافي</th><th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in data %}
+                    <tr>
+                        <td>{{ r.emp_code }}</td>
+                        <td><strong>{{ r.name }}</strong></td>
+                        <td>{{ r.dept_name or '-' }}</td>
+                        <td>
+                            {% set pt={'monthly':'شهري','daily':'يومي','hourly':'ساعة','commission':'عمولة'} %}
+                            <span class="badge badge-{{ 'primary' if r.pay_type=='monthly' else 'info' }}">{{ pt.get(r.pay_type) }}</span>
+                        </td>
+                        <td class="number-cell">{{ "{:,.0f}".format(r.base) }}</td>
+                        <td class="number-cell">{{ "{:,.0f}".format(r.allowances) }}</td>
+                        <td class="number-cell pos">{{ "{:,.0f}".format(r.overtime_amt) }}</td>
+                        <td class="number-cell pos">{{ "{:,.0f}".format(r.commissions) }}</td>
+                        <td class="number-cell total">{{ "{:,.0f}".format(r.gross) }}</td>
+                        <td class="number-cell neg">{{ "{:,.0f}".format(r.si_employee) }}</td>
+                        <td class="number-cell neg">{{ "{:,.0f}".format(r.income_tax) }}</td>
+                        <td class="number-cell neg">{{ "{:,.0f}".format(r.advance_installments) }}</td>
+                        <td class="number-cell neg">{{ "{:,.0f}".format(r.absence_deduction) }}</td>
+                        <td class="number-cell neg">{{ "{:,.0f}".format(r.late_deduction) }}</td>
+                        <td class="number-cell neg">{{ "{:,.0f}".format(r.other_deductions) }}</td>
+                        <td class="number-cell neg" style="font-weight:700;">{{ "{:,.0f}".format(r.total_deductions) }}</td>
+                        <td class="number-cell total" style="font-size:1rem;">{{ "{:,.0f}".format(r.net) }}</td>
+                        <td class="no-print"><a target="_blank" href="{{ url_for('payslip', emp_id=r.employee_id, month=month) }}" class="btn btn-sm btn-outline">ايصال</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="totals-row">
+                        <td colspan="4" style="text-align:center;">الإجمالي</td>
+                        <td class="number-cell">{{ "{:,.0f}".format(tot_base) }}</td>
+                        <td class="number-cell">{{ "{:,.0f}".format(tot_allow) }}</td>
+                        <td class="number-cell pos">{{ "{:,.0f}".format(tot_ot) }}</td>
+                        <td class="number-cell pos">{{ "{:,.0f}".format(tot_comm) }}</td>
+                        <td class="number-cell total">{{ "{:,.0f}".format(tot_gross) }}</td>
+                        <td class="number-cell neg">{{ "{:,.0f}".format(tot_si) }}</td>
+                        <td class="number-cell neg">{{ "{:,.0f}".format(tot_tax) }}</td>
+                        <td class="number-cell neg">{{ "{:,.0f}".format(tot_adv) }}</td>
+                        <td class="number-cell neg">{{ "{:,.0f}".format(tot_abs) }}</td>
+                        <td class="number-cell neg">{{ "{:,.0f}".format(tot_late) }}</td>
+                        <td class="number-cell neg">{{ "{:,.0f}".format(tot_other) }}</td>
+                        <td class="number-cell neg">{{ "{:,.0f}".format(tot_ded) }}</td>
+                        <td class="number-cell total">{{ "{:,.0f}".format(tot_net) }}</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        <div style="margin-top:16px;display:flex;gap:24px;font-size:.8rem;color:var(--gray-600);flex-wrap:wrap;">
+            <div>تُحسب ضريبة كسب العمل على الدخل السنوي (المستحق × 12) وفق الشرائح من الإعدادات.</div>
+            <div>تأمين الشركة (حصة صاحب العمل): {{ "{:,.0f}".format(data|sum(attribute='si_employer')) }}</div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body">
+        <div class="empty-state"><div class="icon">🧾</div><h3>لا يوجد أرقام محسوبة</h3>
+            <p>أضف موظفين وسجلات الحضور/الإضافي ثم افتح هذا الشهر.</p></div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+function savePayroll(){
+    var recs = {{ data | tojson }};
+    var payload = recs.map(function(r){
+        return {employee_id:r.employee_id, base:r.base, allowances:r.allowances,
+            overtime_amt:r.overtime_amt, commissions:r.commissions, gross:r.gross,
+            si_employee:r.si_employee, si_employer:r.si_employer,
+            income_tax:r.income_tax*12, advance_installments:r.advance_installments,
+            absence_deduction:r.absence_deduction, late_deduction:r.late_deduction,
+            other_deductions:r.other_deductions, total_deductions:r.total_deductions,
+            net:r.net, present_days:r.present_days};
+    });
+    fetch('/payroll/save',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({_csrf:'{{ csrf_token() }}',month:'{{ month }}',records:payload})}).then(function(r){
+            if(r.ok){alert('تم حفظ المرتبات');location.reload();}
+        });
+}
+</script>
+{% endblock %}

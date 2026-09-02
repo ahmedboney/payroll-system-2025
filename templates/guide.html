@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}دليل الاستخدام{% endblock %}
+{% block header %}دليل استخدام نظام المرتبات{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header"><h3>🎯 المميزات الرئيسية</h3></div>
+    <div class="card-body">
+        <ul class="guide-list">
+            <li><strong>إدارة الموظفين:</strong> إضافة وتعديل وحذف الموظفين بأنواع أجر مختلفة (شهري / يومي / ساعة / عمولة).</li>
+            <li><strong>الأقسام:</strong> تنظيم الموظفين تحت أقسام مع مدير ومركز تكلفة.</li>
+            <li><strong>الحضور والغياب:</strong> تسجيل الحضور والانصراف، وحساب خصومات الغياب والتأخير تلقائياً.</li>
+            <li><strong>الإجازات:</strong> طلب واعتماد الإجازات بأنواعها (سنوية، مرضية، بدون أجر...).</li>
+            <li><strong>الإضافي والعمولات:</strong> تسجيل ساعات العمل الإضافي والعمولات على المبيعات.</li>
+            <li><strong>الخصومات والسلف:</strong> خصومات متنوعة وأقساط سلف بسيطة.</li>
+            <li><strong>حساب المرتبات:</strong> حساب شامل للتأمينات وضريبة كسب العمل (بشرائح) والخصومات.</li>
+            <li><strong>كشوف وتقارير:</strong> تصدير Excel، تقارير الأقسام، سنوي، ومقارنة بين شهرين.</li>
+            <li><strong>إيصالات PDF:</strong> إيصال راتب لكل موظف قابل للطباعة/التوقيع.</li>
+            <li><strong>سجل تدقيق:</strong> توثيق العمليات الحساسة لمن يرغب في متابعة الأمان.</li>
+        </ul>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><h3>📖 خطوات استخدام النظام</h3></div>
+    <div class="card-body">
+        <ol class="guide-list">
+            <li>سجّل الدخول (المسؤول الافتراضي: <code>admin</code> / <code>admin123</code> — يُفضّل تغييرها فوراً).</li>
+            <li>من <strong>الإعدادات</strong> أدخل بيانات شركتك وحدد أيام العمل والمعاملات.</li>
+            <li>أنشئ <strong>الأقسام</strong> ثم <strong>الموظفين</strong> مع بدلاتهم وأنواع الأجر.</li>
+            <li>سجّل <strong>الحضور</strong> والإجازات والإضافي والعمولات والخصومات والسلف لكل شهر.</li>
+            <li>افتح صفحة <strong>حساب المرتبات</strong> للشهر المطلوب، راجع الأرقام، ثم <strong>حفظ</strong> و<strong>اعتماد الصرف</strong>.</li>
+            <li>استخدم <strong>كشف المرتبات</strong> والتصدير والطباعة، وأرسل لكل موظف <strong>إيصال PDF</strong>.</li>
+        </ol>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><h3>🧮 شرح طريقة الحساب</h3></div>
+    <div class="card-body">
+        <ul class="guide-list">
+            <li><strong>الأساسي:</strong> حسب نوع الأجر (شهري مباشرة، يومي × أيام الشهر، ساعة × ساعات اليوم × أيام الشهر).</li>
+            <li><strong>البدلات:</strong> سكن + نقل + طعام + خطر + موبايل + أخرى.</li>
+            <li><strong>إجمالي المستحق =</strong> الأساسي + البدلات + الإضافي + العمولات.</li>
+            <li><strong>التأمينات:</strong> تُحسب على أساس الراتب (بين الأرضية والسقف) بنسبة الموظف.</li>
+            <li><strong>ضريبة كسب العمل:</strong> تُحسب على الدخل السنوي (المستحق × 12) بالشرائح، ثم تُقسّم على 12 للخصم الشهري.</li>
+            <li><strong>الخصومات:</strong> تأمينات + ضرائب + أقساط سلف + غياب + تأخير + خصومات يدوية.</li>
+            <li><strong>الصافي =</strong> إجمالي المستحق − إجمالي الخصومات.</li>
+        </ul>
+        <p style="font-size:.8rem;color:#9ca3af;margin-top:10px;">يمكن تعديل الشرائح والمعاملات من صفحة الإعدادات.</p>
+    </div>
+</div>
+
+<style>
+.guide-list{margin:0;padding-right:20px;}
+.guide-list li{margin-bottom:9px;font-size:.9rem;line-height:1.7;}
+.guide-list code{background:var(--gray-100);padding:2px 7px;border-radius:5px;font-size:.82rem;direction:ltr;display:inline-block;}
+</style>
+{% endblock %}

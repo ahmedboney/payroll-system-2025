@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}لوحة التحكم{% endblock %}
+{% block header %}لوحة التحكم{% endblock %}
+
+{% block content %}
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon blue">👥</div>
+        <div class="stat-info"><h3>{{ stats.employees }}</h3><p>الموظفون النشطون</p></div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon cyan">🏢</div>
+        <div class="stat-info"><h3>{{ stats.departments }}</h3><p>الأقسام</p></div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon green">💵</div>
+        <div class="stat-info"><h3>{{ "{:,.0f}".format(stats.total_monthly_salary) }}</h3><p>إجمالي الرواتب الشهرية</p></div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon yellow">🏖️</div>
+        <div class="stat-info"><h3>{{ stats.pending_leaves }}</h3><p>طلبات إجازة معلقة</p></div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon red">💰</div>
+        <div class="stat-info"><h3>{{ "{:,.0f}".format(stats.active_advances) }}</h3><p>سلف نشطة</p></div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon yellow">⏰</div>
+        <div class="stat-info"><h3>{{ "{:,.0f}".format(stats.month_overtime) }}</h3><p>إضافي هذا الشهر</p></div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3>روابط سريعة</h3>
+    </div>
+    <div class="card-body">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;">
+            <a href="{{ url_for('employees') }}" class="btn btn-outline" style="justify-content:center;">👥 الموظفين</a>
+            <a href="{{ url_for('attendance') }}" class="btn btn-outline" style="justify-content:center;">✅ الحضور</a>
+            <a href="{{ url_for('payroll') }}" class="btn btn-primary" style="justify-content:center;">🧾 المرتبات</a>
+            <a href="{{ url_for('reports') }}" class="btn btn-outline" style="justify-content:center;">📄 التقارير</a>
+            <a href="{{ url_for('advances') }}" class="btn btn-outline" style="justify-content:center;">💰 السلف</a>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><h3>مرتبات الشهر الحالي ({{ current_month }})</h3></div>
+    <div class="card-body">
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>الكود</th><th>الاسم</th><th>القسم</th><th>المستحق</th><th>الخصومات</th><th>الصافي</th><th>الحالة</th></tr></thead>
+                <tbody>
+                    {% for r in payroll %}
+                    <tr>
+                        <td>{{ r.emp_code }}</td>
+                        <td><strong>{{ r.name }}</strong></td>
+                        <td>{{ r.dept_name or '-' }}</td>
+                        <td class="number-cell pos">{{ "{:,.0f}".format(r.total_earnings) }}</td>
+                        <td class="number-cell neg">{{ "{:,.0f}".format(r.total_deductions) }}</td>
+                        <td class="number-cell total">{{ "{:,.0f}".format(r.net_salary) }}</td>
+                        <td><span class="badge badge-{{ 'success' if r.status=='confirmed' else 'warning' }}">{{ 'مؤكد' if r.status=='confirmed' else 'مسودة' }}</span></td>
+                    </tr>
+                    {% endfor %}
+                    {% if not payroll %}
+                    <tr><td colspan="7" class="empty-state"><div class="icon">🧾</div><h3>لم يتم حساب المرتبات بعد</h3><p>اذهب إلى صفحة حساب المرتبات</p></td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

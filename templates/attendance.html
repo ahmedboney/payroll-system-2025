@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}الحضور والغياب{% endblock %}
+{% block header %}سجل الحضور والغياب{% endblock %}
+{% block actions %}
+<button class="btn btn-success no-print" onclick="saveAttendance()">💾 حفظ الكل</button>
+{% endblock %}
+
+{% block content %}
+<div class="month-picker">
+    <label style="font-weight:600;">الشهر:</label>
+    <input type="month" id="m" value="{{ month }}" onchange="window.location.href='?month='+this.value">
+</div>
+
+<div class="card">
+    <div class="card-header"><h3>تسجيل الحضور - {{ month }}</h3></div>
+    <div class="card-body">
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>الكود</th><th>الموظف</th><th>التاريخ</th><th>حضور</th><th>انصراف</th><th>الحالة</th></tr></thead>
+                <tbody>
+                    {% for e in emps %}
+                    <tr>
+                        <td>{{ e.emp_code }}</td>
+                        <td><strong>{{ e.name }}</strong></td>
+                        <td><input type="date" class="f-date" data-emp="{{ e.id }}" value="{{ month }}-01" style="padding:6px;border:1px solid #d1d5db;border-radius:6px;"></td>
+                        <td><input type="time" class="f-in" data-emp="{{ e.id }}" value="09:00" style="padding:6px;border:1px solid #d1d5db;border-radius:6px;"></td>
+                        <td><input type="time" class="f-out" data-emp="{{ e.id }}" value="17:00" style="padding:6px;border:1px solid #d1d5db;border-radius:6px;"></td>
+                        <td><select class="f-status" data-emp="{{ e.id }}" style="padding:6px;border:1px solid #d1d5db;border-radius:6px;">
+                            <option value="present">حاضر</option>
+                            <option value="absent">غائب</option>
+                            <option value="late">متأخر</option>
+                            <option value="leave">إجازة</option>
+                            <option value="sick">مرضي</option>
+                        </select></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><h3>السجلات الحالية</h3></div>
+    <div class="card-body">
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>الموظف</th><th>التاريخ</th><th>حضور</th><th>انصراف</th><th>الحالة</th></tr></thead>
+                <tbody>
+                    {% for r in records %}
+                    <tr>
+                        <td>{{ r.emp_name }}</td>
+                        <td>{{ r.date }}</td>
+                        <td>{{ r.check_in or '-' }}</td>
+                        <td>{{ r.check_out or '-' }}</td>
+                        <td><span class="badge badge-{{ 'success' if r.status=='present' else 'danger' if r.status=='absent' else 'warning' if r.status=='late' else 'info' }}">{{ r.status }}</span></td>
+                    </tr>
+                    {% endfor %}
+                    {% if not records %}
+                    <tr><td colspan="5" class="empty-state"><div class="icon">✅</div><h3>لا توجد سجلات</h3></td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function saveAttendance(){
+    var recs=[];
+    document.querySelectorAll('tr').forEach(function(row){
+        var d=row.querySelector('.f-date');
+        if(d){ recs.push({employee_id:parseInt(d.dataset.emp), date:d.value,
+            check_in:row.querySelector('.f-in').value, check_out:row.querySelector('.f-out').value,
+            status:row.querySelector('.f-status').value}); }
+    });
+    fetch('/attendance/save',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({_csrf:'{{ csrf_token() }}',month:'{{ month }}',records:recs})}).then(function(r){if(r.ok)location.reload();});
+}
+</script>
+{% endblock %}

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}مقارنة شهرين{% endblock %}
+{% block header %}مقارنة المرتبات بين شهرين{% endblock %}
+{% block actions %}
+<button class="btn btn-outline no-print" onclick="window.print()">🖨️ طباعة</button>
+{% endblock %}
+
+{% block content %}
+<div class="filter-bar card" style="padding:16px;">
+    <form method="GET" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+        <div class="form-group">
+            <label>الشهر الأول</label>
+            <input type="month" name="month1" value="{{ m1 }}" class="form-control">
+        </div>
+        <div class="form-group">
+            <label>الشهر الثاني</label>
+            <input type="month" name="month2" value="{{ m2 }}" class="form-control">
+        </div>
+        <button class="btn btn-primary">مقارنة</button>
+    </form>
+</div>
+
+{% set pos_count = rows|selectattr('diff', 'gt', 0)|list|length %}
+{% set neg_count = rows|selectattr('diff', 'lt', 0)|list|length %}
+{% set no_count = rows|selectattr('diff', 'eq', 0)|list|length %}
+<div class="stats-grid">
+    <div class="stat-card"><div class="stat-icon blue">👥</div><div class="stat-info"><h3>{{ rows|length }}</h3><p>إجمالي الموظفين</p></div></div>
+    <div class="stat-card"><div class="stat-icon green">📈</div><div class="stat-info"><h3>{{ pos_count }}</h3><p>ارتفع الصافي</p></div></div>
+    <div class="stat-card"><div class="stat-icon red">📉</div><div class="stat-info"><h3>{{ neg_count }}</h3><p>انخفض الصافي</p></div></div>
+    <div class="stat-card"><div class="stat-icon yellow">➖</div><div class="stat-info"><h3>{{ no_count }}</h3><p>بدون تغيير</p></div></div>
+</div>
+
+<div class="card">
+    <div class="card-header"><h3>صافي الرواتب: {{ m1 }} مقابل {{ m2 }}</h3></div>
+    <div class="card-body">
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>الكود</th><th>الاسم</th><th>المستحق ({{ m1 }})</th><th>الصافي ({{ m1 }})</th>
+                        <th>المستحق ({{ m2 }})</th><th>الصافي ({{ m2 }})</th><th>الفرق في الصافي</th></tr>
+                </thead>
+                <tbody>
+                    {% for r in rows %}
+                    <tr>
+                        <td>{{ r.emp_code }}</td>
+                        <td><strong>{{ r.name }}</strong></td>
+                        <td class="number-cell">{{ "{:,.2f}".format(r.gross1) }}</td>
+                        <td class="number-cell total">{{ "{:,.2f}".format(r.net1) }}</td>
+                        <td class="number-cell">{{ "{:,.2f}".format(r.gross2) }}</td>
+                        <td class="number-cell total">{{ "{:,.2f}".format(r.net2) }}</td>
+                        <td class="number-cell {{ 'pos' if r.diff>0 else 'neg' if r.diff<0 else '' }}">
+                            {{ ('+' if r.diff>0 else '') ~ '{:,.2f}'.format(r.diff) }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% if not rows %}
+                    <tr><td colspan="7" class="empty-state"><div class="icon">📊</div><h3>لا توجد بيانات للمقارنة</h3></td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

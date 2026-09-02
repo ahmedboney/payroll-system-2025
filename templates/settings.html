@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}الإعدادات{% endblock %}
+{% block header %}إعدادات النظام{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header"><h3>إعدادات النظام</h3></div>
+    <div class="card-body">
+        <form method="POST">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <div class="form-section"><div class="form-section-title">بيانات الشركة</div>
+                <div class="form-row">
+                    <div class="form-group"><label>اسم الشركة</label><input name="company_name" value="{{ s.company_name }}" class="form-control"></div>
+                    <div class="form-group"><label>العنوان</label><input name="company_address" value="{{ s.company_address }}" class="form-control"></div>
+                    <div class="form-group"><label>الهاتف</label><input name="company_phone" value="{{ s.company_phone }}" class="form-control"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>الرقم الضريبي</label><input name="company_tax_id" value="{{ s.company_tax_id }}" class="form-control"></div>
+                    <div class="form-group"><label>رقم التأمينات</label><input name="company_insurance_no" value="{{ s.company_insurance_no }}" class="form-control"></div>
+                    <div class="form-group"><label>العملة</label>
+                        <select name="currency" class="form-control">
+                            <option value="EGP" {{ 'selected' if s.currency=='EGP' }}>جنيه مصري</option>
+                            <option value="SAR" {{ 'selected' if s.currency=='SAR' }}>ريال سعودي</option>
+                            <option value="AED" {{ 'selected' if s.currency=='AED' }}>درهم إماراتي</option>
+                            <option value="USD" {{ 'selected' if s.currency=='USD' }}>دولار</option>
+                        </select></div>
+                </div>
+            </div>
+
+            <div class="form-section"><div class="form-section-title">إعدادات العمل</div>
+                <div class="form-row">
+                    <div class="form-group"><label>أيام العمل الشهرية</label><input name="working_days_monthly" value="{{ s.working_days_monthly }}" class="form-control" step="0.5"></div>
+                    <div class="form-group"><label>ساعات العمل اليومية</label><input name="working_hours_daily" value="{{ s.working_hours_daily }}" class="form-control" step="0.5"></div>
+                    <div class="form-group"><label>سماح تأخير (دقيقة)</label><input name="late_minutes_tolerance" value="{{ s.late_minutes_tolerance }}" class="form-control" type="number"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>خصم التأخير بالساعة</label><input name="late_deduction_per_hour" value="{{ s.late_deduction_per_hour }}" class="form-control" step="0.01"></div>
+                    <div class="form-group"><label>نسبة خصم الغياب (%)</label><input name="absence_deduction_percent" value="{{ s.absence_deduction_percent }}" class="form-control" type="number"></div>
+                </div>
+            </div>
+
+            <div class="form-section"><div class="form-section-title">معامل الإضافي</div>
+                <div class="form-row">
+                    <div class="form-group"><label>يوم عادي (×)</label><input name="overtime_weekday" value="{{ s.overtime_weekday }}" class="form-control" step="0.5"></div>
+                    <div class="form-group"><label>عطلة (×)</label><input name="overtime_weekend" value="{{ s.overtime_weekend }}" class="form-control" step="0.5"></div>
+                    <div class="form-group"><label>عيد (×)</label><input name="overtime_holiday" value="{{ s.overtime_holiday }}" class="form-control" step="0.5"></div>
+                </div>
+            </div>
+
+            <div class="form-section"><div class="form-section-title">التأمينات الاجتماعية</div>
+                <div class="form-row">
+                    <div class="form-group"><label>أرضية التأمين</label><input name="insurance_floor" value="{{ s.insurance_floor }}" class="form-control" type="number"></div>
+                    <div class="form-group"><label>سقف التأمين</label><input name="insurance_ceiling" value="{{ s.insurance_ceiling }}" class="form-control" type="number"></div>
+                    <div class="form-group"><label>نسبة الموظف %</label><input name="insurance_employee_ratio" value="{{ s.insurance_employee_ratio }}" class="form-control" step="0.01"></div>
+                    <div class="form-group"><label>نسبة الشركة %</label><input name="insurance_employer_ratio" value="{{ s.insurance_employer_ratio }}" class="form-control" step="0.01"></div>
+                </div>
+            </div>
+
+            <div class="form-section"><div class="form-section-title">الإعفاء الضريبي الافتراضي</div>
+                <div class="form-row">
+                    <div class="form-group" style="max-width:250px;"><label>إعفاء ضريبي شهري</label><input name="tax_exempt_default" value="{{ s.tax_exempt_default }}" class="form-control" step="0.01"></div>
+                </div>
+            </div>
+
+            <button class="btn btn-primary">💾 حفظ الإعدادات</button>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><h3>شرائح ضريبة كسب العمل (سنوياً)</h3></div>
+    <div class="card-body">
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>من</th><th>إلى</th><th>النسبة %</th><th>خصم ثابت</th></tr></thead>
+                <tbody>
+                    {% for b in brackets %}
+                    <tr>
+                        <td class="number-cell">{{ "{:,.0f}".format(b.from_amount) }}</td>
+                        <td class="number-cell">{{ '{:,.0f}'.format(b.to_amount) if b.to_amount else '∞' }}</td>
+                        <td>{{ b.rate }}%</td>
+                        <td class="number-cell">{{ "{:,.0f}".format(b.fixed_deduction) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <p style="font-size:.8rem;color:#9ca3af;margin-top:10px;">تُحسب الضريبة على الدخل السنوي = (إجمالي المستحق الشهري × 12). يتم تقسيم النتيجة على 12 للخصم الشهري.</p>
+        <p style="font-size:.8rem;color:#9ca3af;">آخر نسخة احتياطية تلقائية: {{ s.last_backup or 'لم تُنشأ بعد' }}</p>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><h3>💾 النسخ الاحتياطي لقاعدة البيانات</h3></div>
+    <div class="card-body">
+        <p style="font-size:.85rem;color:#6b7280;margin-bottom:12px;">يتم إنشاء نسخة احتياطية تلقائياً مرة كل شهر. يمكنك أيضاً إنشاء نسخة يدوية أو استعادة نسخة سابقة أو تنزيلها.</p>
+        <form method="POST" action="{{ url_for('backup_create') }}" style="margin-bottom:16px">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <button class="btn btn-primary">⬆ إنشاء نسخة احتياطية الآن</button>
+        </form>
+        {% if backups %}
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>الملف</th><th>التاريخ</th><th>الحجم</th><th class="no-print">إجراءات</th></tr></thead>
+                <tbody>
+                    {% for b in backups %}
+                    <tr>
+                        <td dir="ltr">{{ b.filename }}</td>
+                        <td>{{ b.created }}</td>
+                        <td>{{ b.size }} بايت</td>
+                        <td class="no-print" style="display:flex;gap:0.3rem;flex-wrap:wrap">
+                            <form method="POST" action="{{ url_for('backup_restore', filename=b.filename) }}" style="display:inline" onsubmit="return confirm('هل تريد استعادة هذه النسخة؟ سيتم استبدال البيانات الحالية.')">
+                                <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                                <button class="btn btn-sm btn-warning">استعادة</button>
+                            </form>
+                            <a href="{{ url_for('backup_download', filename=b.filename) }}" class="btn btn-sm btn-outline">تحميل</a>
+                            <form method="POST" action="{{ url_for('backup_delete', filename=b.filename) }}" style="display:inline" onsubmit="return confirm('حذف هذه النسخة الاحتياطية؟')">
+                                <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                                <button class="btn btn-sm btn-danger">حذف</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p style="color:#9ca3af;font-size:.85rem;">لا توجد نسخ احتياطية بعد.</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card" style="margin-top:2rem">
+    <h3 style="margin-bottom:1rem">🔑 تغيير كلمة المرور</h3>
+            <form method="POST" action="/change-password" style="display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-end">
+                <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                <div style="flex:1;min-width:200px">
+                    <label>كلمة المرور الحالية</label>
+                    <input type="password" name="old_password" required>
+                </div>
+                <div style="flex:1;min-width:200px">
+                    <label>كلمة المرور الجديدة</label>
+                    <input type="password" name="new_password" required minlength="6">
+                </div>
+                <div style="flex:1;min-width:200px">
+                    <label>تأكيد كلمة المرور</label>
+                    <input type="password" name="confirm_password" required minlength="6">
+                </div>
+                <div>
+                    <button type="submit" class="btn">تحديث</button>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}

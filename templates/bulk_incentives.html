@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}الحوافز والخصومات الجماعية{% endblock %}
+{% block header %}حوافز / خصومات جماعية{% endblock %}
+
+{% block content %}
+<div class="month-picker no-print">
+    <label style="font-weight:600;">الشهر:</label>
+    <input type="month" id="m" value="{{ month }}" onchange="window.location.href='?month='+this.value">
+</div>
+
+<div class="card">
+    <div class="card-header"><h3>إضافة حافز / خصم جماعي - {{ month }}</h3></div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('bulk_incentives', month=month) }}">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <input type="hidden" name="month" value="{{ month }}">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>النوع</label>
+                    <select name="kind" class="form-control">
+                        <option value="bonus">حافز (إضافة)</option>
+                        <option value="ded">خصم (استقطاع)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>المبلغ لكل موظف</label>
+                    <input type="number" name="per_employee_amount" class="form-control" step="0.01" value="0" required>
+                </div>
+                <div class="form-group" style="flex:2;">
+                    <label>الوصف</label>
+                    <input name="description" class="form-control" placeholder="مثال: مكافأة نهاية السنة / خصم غياب جماعي">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>يطبق على (اترك الكل محدداً للتطبيق على الجميع):</label>
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;max-height:220px;overflow-y:auto;border:1px solid var(--gray-200);border-radius:8px;padding:12px;">
+                    {% for e in emps %}
+                    <label style="display:flex;align-items:center;gap:7px;font-size:.85rem;">
+                        <input type="checkbox" name="emp_{{ e.id }}"> {{ e.name }}
+                    </label>
+                    {% endfor %}
+                    {% if not emps %}
+                    <span style="color:#9ca3af;">لا يوجد موظفون نشطون</span>
+                    {% endif %}
+                </div>
+            </div>
+            <button class="btn btn-primary">تطبيق</button>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><h3>السجلات الجماعية</h3></div>
+    <div class="card-body">
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>الشهر</th><th>النوع</th><th>الوصف</th><th>المبلغ/موظف</th><th>المستهدفون</th><th>بواسطة</th><th></th></tr></thead>
+                <tbody>
+                    {% for it in items %}
+                    <tr>
+                        <td>{{ it.month }}</td>
+                        <td><span class="badge badge-{{ 'success' if it.kind=='bonus' else 'danger' }}">{{ 'حافز' if it.kind=='bonus' else 'خصم' }}</span></td>
+                        <td>{{ it.description or '-' }}</td>
+                        <td class="number-cell {{ 'pos' if it.kind=='bonus' else 'neg' }}">{{ "{:,.2f}".format(it.per_employee_amount) }}</td>
+                        <td>
+                            {% if it.specific_employees and it.specific_employees != '[]' and it.specific_employees != '' %}
+                                <span class="badge badge-info">موظفون محددون</span>
+                            {% else %}
+                                <span class="badge badge-gray">الكل</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ it.created_by or '-' }}</td>
+                        <td class="no-print">
+                            <form method="POST" action="{{ url_for('delete_bulk_incentive', bid=it.id) }}" style="display:inline" onsubmit="return confirm('حذف هذا السجل؟')">
+                                <button class="btn btn-sm btn-danger">حذف</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not items %}
+                    <tr><td colspan="7" class="empty-state"><div class="icon">🎯</div><h3>لا توجد سجلات جماعية</h3></td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

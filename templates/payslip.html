@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>ايصال راتب - {{ emp.name }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<style>
+body{background:#fff;}
+.wrap{max-width:700px;margin:0 auto;padding:20px;}
+.toolbar{display:flex;gap:10px;margin-bottom:20px;}
+@media print{.toolbar{display:none;}}
+.ph{text-align:center;padding:18px;border-bottom:2px double #d1d5db;margin-bottom:14px;}
+.ph h1{font-size:1.2rem;}
+.pg{display:grid;grid-template-columns:1fr 1fr;gap:7px 20px;padding:13px;background:#f9fafb;border-radius:8px;font-size:.88rem;margin-bottom:13px;}
+.pg .lbl{color:#9ca3af;}
+.sec{margin-bottom:11px;}
+.sec h4{background:#f3f4f6;padding:7px 13px;border-radius:6px;font-size:.85rem;}
+.row{display:flex;justify-content:space-between;padding:7px 13px;border-bottom:1px solid #f3f4f6;font-size:.88rem;}
+.row.tot{font-weight:700;border-top:2px solid #d1d5db;border-bottom:none;padding-top:9px;}
+.net{text-align:center;padding:19px;background:#dbeafe;border-radius:10px;margin-top:15px;}
+.net h3{color:#2563eb;}
+.net .a{font-size:1.9rem;font-weight:700;color:#1d4ed8;font-family:Consolas,monospace;}
+.sign{margin-top:24px;display:grid;grid-template-columns:repeat(3,1fr);text-align:center;font-size:.78rem;color:#9ca3af;}
+.sign div{padding-top:34px;border-top:1px solid #d1d5db;}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="toolbar">
+    <button onclick="window.print()" class="btn btn-primary">🖨️ طباعة</button>
+    <button onclick="window.close()" class="btn btn-outline">إغلاق</button>
+</div>
+
+<div class="ph">
+    <h1>{{ settings.company_name or 'الشركة' }}</h1>
+    <p style="font-size:.85rem;color:#9ca3af;">{{ settings.company_address or '' }}</p>
+    <h2 style="font-size:1rem;color:#4b5563;margin-top:6px;">ايصال راتب شهري - {{ month }}</h2>
+</div>
+
+<div class="pg">
+    <div><span class="lbl">الاسم:</span> <strong>{{ emp.name }}</strong></div>
+    <div><span class="lbl">الكود:</span> {{ emp.emp_code }}</div>
+    <div><span class="lbl">القسم:</span> {{ emp.dept_name or '-' }}</div>
+    <div><span class="lbl">الوظيفة:</span> {{ emp.position or '-' }}</div>
+    <div><span class="lbl">الرقم القومي:</span> {{ emp.national_id or '-' }}</div>
+    <div><span class="lbl">الشهر:</span> {{ month }}</div>
+</div>
+
+{% if rec %}
+<div class="sec"><h4>المستحقات</h4>
+    <div class="row"><span>الراتب الأساسي</span><span style="font-family:Consolas,monospace;">{{ "{:,.2f}".format(rec.base) }}</span></div>
+    <div class="row"><span>مجموع البدلات</span><span style="font-family:Consolas,monospace;">{{ "{:,.2f}".format(rec.allowances) }}</span></div>
+    <div class="row"><span>ساعات الإضافي ({{ rec.overtime_hours }} ساعة)</span><span style="font-family:Consolas,monospace;">{{ "{:,.2f}".format(rec.overtime_amt) }}</span></div>
+    <div class="row"><span>العمولات</span><span style="font-family:Consolas,monospace;">{{ "{:,.2f}".format(rec.commissions) }}</span></div>
+    <div class="row tot"><span>إجمالي المستحق</span><span style="font-family:Consolas,monospace;color:#16a34a;">{{ "{:,.2f}".format(rec.gross) }}</span></div>
+</div>
+
+<div class="sec"><h4>الخصومات</h4>
+    <div class="row"><span>التأمينات الاجتماعية (الموظف)</span><span style="font-family:Consolas,monospace;">{{ "{:,.2f}".format(rec.si_employee) }}</span></div>
+    <div class="row"><span>ضريبة كسب العمل</span><span style="font-family:Consolas,monospace;">{{ "{:,.2f}".format(rec.income_tax) }}</span></div>
+    <div class="row"><span>أقساط السلف</span><span style="font-family:Consolas,monospace;">{{ "{:,.2f}".format(rec.advance_installments) }}</span></div>
+    <div class="row"><span>خصم الغياب ({{ rec.absent_days }} يوم)</span><span style="font-family:Consolas,monospace;">{{ "{:,.2f}".format(rec.absence_deduction) }}</span></div>
+    <div class="row"><span>خصم التأخير ({{ rec.late_days }} يوم)</span><span style="font-family:Consolas,monospace;">{{ "{:,.2f}".format(rec.late_deduction) }}</span></div>
+    <div class="row"><span>خصومات أخرى</span><span style="font-family:Consolas,monospace;">{{ "{:,.2f}".format(rec.other_deductions) }}</span></div>
+    <div class="row tot"><span>إجمالي الخصومات</span><span style="font-family:Consolas,monospace;color:#dc2626;">{{ "{:,.2f}".format(rec.total_deductions) }}</span></div>
+</div>
+
+<div class="net">
+    <h3>صافي الراتب المستحق</h3>
+    <div class="a">{{ "{:,.2f}".format(rec.net) }} {{ settings.currency or 'ج.م' }}</div>
+</div>
+
+<div class="sign">
+    <div>توقيع الموظف</div>
+    <div>توقيع المحاسب</div>
+    <div>توقيع المدير</div>
+</div>
+{% else %}
+<div class="empty-state" style="text-align:center;padding:50px;color:#9ca3af;">
+    <div class="icon" style="font-size:3rem;">🧾</div><h3>لا توجد بيانات مرتب لهذا الشهر</h3>
+</div>
+{% endif %}
+</div>
+</body>
+</html>
