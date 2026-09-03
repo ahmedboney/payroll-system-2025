@@ -5,6 +5,7 @@
             <button class="modal-close" onclick="closeModal('addModal')">&times;</button>
         </div>
         <form id="editForm" method="POST" action="{{ url_for('add_employee') }}">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
             <div class="modal-body">
                 <div class="form-section">
                     <div class="form-section-title">البيانات الأساسية</div>

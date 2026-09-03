@@ -349,16 +349,11 @@ def export_employees():
                    e['base_salary'],e['daily_rate'],e['hourly_rate'],e['housing_allowance'],e['transport_allowance'],
                    e['food_allowance'],e['other_allowances'],e['danger_allowance'],e['phone_allowance'],
                    'نعم' if e['social_insurance_enabled'] else 'لا','نعم' if e['income_tax_enabled'] else 'لا',e['status']])
-    for cell in ws[1]:
-        cell.font = Font(bold=True, color='FFFFFF')
-        cell.fill = PatternFill('solid', fgColor='2563EB')
-        cell.alignment = Alignment(horizontal='center')
-    for col in ws.columns:
-        width = max(len(str(cell.value or '')) for cell in col) + 2
-        ws.column_dimensions[get_column_letter(col[0].column)].width = min(width, 30)
-    out = io.BytesIO()
-    wb.save(out)
-    out.seek(0)
+    # تنسيق فخم بأعمدة أرقام
+    money = [7,8,9,10,11,12,13,14,15]  # الفهرس (1-base) للأعمدة المالية
+    center = [1,4,6,16,17,18]
+    _style_sheet(ws, 1, len(headers), money_cols=money, center_cols=center)
+    out = _export_xlsx(wb)
     return send_file(out, as_attachment=True, download_name='الموظفين.xlsx',
                      mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
@@ -613,33 +608,24 @@ def export_payroll():
                'تأمينات(موظف)','ضرائب','سلف','غياب','تأخير','خصومات أخرى','إجمالي الخصومات','صافي الراتب']
     ws.append([])
     ws.append(headers)
-    hdr_fill = PatternFill('solid', fgColor='2563EB')
-    for r in data:
-        ws.append([r['emp_code'],r['name'],r['dept_name'],r['position'],r['base'],r['allowances'],
-                   r['overtime_amt'],r['commissions'],r['gross'],r['si_employee'],r['income_tax'],
-                   r['advance_installments'],r['absence_deduction'],r['late_deduction'],r['other_deductions'],
-                   r['total_deductions'],r['net']])
-    total_row = len(data) + 4
-    ws.cell(row=total_row, column=2, value='الإجمالي').font = Font(bold=True)
+    rows = [[r['emp_code'],r['name'],r['dept_name'],r['position'],r['base'],r['allowances'],
+             r['overtime_amt'],r['commissions'],r['gross'],r['si_employee'],r['income_tax'],
+             r['advance_installments'],r['absence_deduction'],r['late_deduction'],r['other_deductions'],
+             r['total_deductions'],r['net']] for r in data]
+    for row in rows:
+        ws.append(row)
+    total_row = len(rows) + 4
+    ws.cell(row=total_row, column=2, value='الإجمالي')
     total_cols = [5,6,7,8,9,10,11,12,13,14,15,16,17]
+    # صف الإجمالي: تجميع الأعمدة المالية فقط
     for col in total_cols:
-        letter = get_column_letter(col)
-        total = sum(row[col-1] for row in map(lambda r: [r['emp_code'],r['name'],r['dept_name'],r['position'],r['base'],
-            r['allowances'],r['overtime_amt'],r['commissions'],r['gross'],r['si_employee'],r['income_tax'],
-            r['advance_installments'],r['absence_deduction'],r['late_deduction'],r['other_deductions'],
-            r['total_deductions'],r['net']], data))
-        cell = ws.cell(row=total_row, column=col, value=round(total,2))
-        cell.font = Font(bold=True)
-    for cell in ws[3]:
-        cell.font = Font(bold=True, color='FFFFFF', size=9)
-        cell.fill = hdr_fill
-        cell.alignment = Alignment(horizontal='center')
-    for col in ws.columns:
-        width = max(len(str(cell.value or '')) for cell in col) + 2
-        ws.column_dimensions[get_column_letter(col[0].column)].width = min(width, 25)
-    out = io.BytesIO()
-    wb.save(out)
-    out.seek(0)
+        total = sum(row[col-1] for row in rows)
+        ws.cell(row=total_row, column=col, value=round(total,2))
+    _style_sheet(ws, header_row=3, ncols=len(headers),
+                 total_rows=(total_row,),
+                 money_cols=[5,6,7,8,9,10,11,12,13,14,15,16,17],
+                 center_cols=[1,3,4])
+    out = _export_xlsx(wb)
     return send_file(out, as_attachment=True, download_name=f'مرتبات-{month}.xlsx',
                      mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
@@ -794,12 +780,18 @@ def dept_report_export():
         g['count'] += 1; g['base'] += r['base']; g['earnings'] += r['gross']
         g['deductions'] += r['total_deductions']; g['net'] += r['net']
     wb = Workbook(); ws = wb.active; ws.title = "تقرير الأقسام"
-    ws.append(['القسم','عدد الموظفين','الأساسي','إجمالي المستحق','الإجمالي للخصومات','صافي'])
+    headers = ['القسم','عدد الموظفين','الأساسي','إجمالي المستحق','الإجمالي للخصومات','صافي']
+    ws.append(headers)
     for dept, g in grouped.items():
         ws.append([dept, g['count'], g['base'], g['earnings'], g['deductions'], g['net']])
-    for cell in ws[1]:
-        cell.font = Font(bold=True, color='FFFFFF'); cell.fill = PatternFill('solid', fgColor='2563EB')
-    out = io.BytesIO(); wb.save(out); out.seek(0)
+    total_row = ws.max_row + 1
+    ws.cell(row=total_row, column=1, value='الإجمالي')
+    for col, key in [(3,'base'),(4,'earnings'),(5,'deductions'),(6,'net')]:
+        ws.cell(row=total_row, column=col, value=round(sum(g[k] for g in grouped.values()), 2))
+    ws.cell(row=total_row, column=2, value=sum(g['count'] for g in grouped.values()))
+    _style_sheet(ws, 1, len(headers), total_rows=(total_row,),
+                 money_cols=[3,4,5,6], center_cols=[2])
+    out = _export_xlsx(wb)
     return send_file(out, as_attachment=True, download_name=f'تقرير-الأقسام-{month}.xlsx',
                      mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
@@ -844,10 +836,12 @@ def audit_export():
     day = request.args.get('day', '')
     logs = db.get_audit_log(10000, day=day)
     wb = Workbook(); ws = wb.active; ws.title = "سجل التدقيق"
-    ws.append(['التاريخ','المستخدم','الإجراء','الكيان','التفاصيل','IP'])
+    headers = ['التاريخ','المستخدم','الإجراء','الكيان','التفاصيل','IP']
+    ws.append(headers)
     for l in logs:
         ws.append([l['created_at'], l['username'], l['action'], l['entity'], l['details'], l['ip_address']])
-    out = io.BytesIO(); wb.save(out); out.seek(0)
+    _style_sheet(ws, 1, len(headers), center_cols=[1,2,3,4,6])
+    out = _export_xlsx(wb)
     fname = f'سجل-التدقيق-{day}.xlsx' if day else 'سجل-التدقيق.xlsx'
     return send_file(out, as_attachment=True, download_name=fname,
                      mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
@@ -1119,10 +1113,10 @@ def _build_payslip_pdf(emp, record, month, settings):
     c.setStrokeColor(HexColor('#cbd5e1'))
     c.setFont(font_name, 9); c.setFillColor(HexColor('#6b7280'))
     # signature taken?
-    from database import Database as _DB
-    dbs = _DB()
-    signed = dbs.has_signed(emp['id'], month)
-    dbs.conn.close()
+    try:
+        signed = db.has_signed(emp['id'], month)
+    except Exception:
+        signed = False
     if signed:
         c.drawString(margin, cy, ar('✓ تم التوقيع على الاستلام إلكترونياً'))
     c.drawString(margin, cy-30, ar('توقيع الموظف: ____________'))
@@ -1146,6 +1140,59 @@ def _num(v, default=0):
 
 # ==================== RUN ====================
 import webbrowser, threading
+
+# ==================== ورقة Excel فخمة (تصدير موحّد) ====================
+_HEADER_FILL = PatternFill('solid', fgColor='1F3864')     # أزرق داكن
+_HEADER_FONT = Font(bold=True, color='FFFFFF', size=11)
+_ALT_FILL = PatternFill('solid', fgColor='DCE6F1')         # تظليل بديل فاتح
+_TOT_FILL = PatternFill('solid', fgColor='FFE699')         # خبرة الإجمالي أصفر
+_THIN = Side(style='thin', color='9CA3AF')
+_BOX = Border(left=_THIN, right=_THIN, top=_THIN, bottom=_THIN)
+_CENTER = Alignment(horizontal='center', vertical='center')
+_RIGHT = Alignment(horizontal='right', vertical='center')
+
+def _style_sheet(ws, header_row, ncols, total_rows=(), money_cols=(), center_cols=()):
+    """تطبيق شكل فخم على كل ورقة تقرير: ترويسة مسطحة + حدود + تظليل متناوب + عرض أعمدة + تجميد + فلتر."""
+    from openpyxl.utils import get_column_letter as _gcl
+    # ترويسة
+    for c in range(1, ncols + 1):
+        cell = ws.cell(row=header_row, column=c)
+        cell.font = _HEADER_FONT
+        cell.fill = _HEADER_FILL
+        cell.alignment = _CENTER
+        cell.border = _BOX
+    # بيانات (حدود + تظليل متناوب + محاذاة)
+    for row in range(header_row + 1, ws.max_row + 1):
+        for c in range(1, ncols + 1):
+            cell = ws.cell(row=row, column=c)
+            cell.border = _BOX
+            if row in total_rows:
+                cell.fill = _TOT_FILL
+                cell.font = Font(bold=True, size=11)
+            elif (row - header_row) % 2 == 0:
+                cell.fill = _ALT_FILL
+            if c in money_cols:
+                cell.number_format = '#,##0.00'
+                cell.alignment = _RIGHT
+            elif c in center_cols:
+                cell.alignment = _CENTER
+    # عرض أعمدة مناسب
+    for c in range(1, ncols + 1):
+        letter = _gcl(c)
+        col_vals = [ws.cell(row=r, column=c).value for r in range(header_row, ws.max_row + 1)]
+        width = max((len(str(v)) if v is not None else 0) for v in col_vals) + 4 if col_vals else 12
+        ws.column_dimensions[letter].width = min(max(width, 10), 32)
+    ws.freeze_panes = ws.cell(row=header_row + 1, column=1)
+    if ws.max_row > header_row:
+        ws.auto_filter.ref = f"A{header_row}:{_gcl(ncols)}{ws.max_row}"
+    ws.row_dimensions[header_row].height = 22
+
+def _export_xlsx(wb):
+    """تحويل المصنف إلى استجابة تنزيل."""
+    out = io.BytesIO()
+    wb.save(out)
+    out.seek(0)
+    return out
 
 def _open_browser(port):
     time.sleep(1.5)

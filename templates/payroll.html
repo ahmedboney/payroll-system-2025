@@ -6,6 +6,7 @@
 <div style="display:flex;gap:10px;" class="no-print">
     <button class="btn btn-success" onclick="savePayroll()">💾 حفظ المرتبات</button>
     <form method="POST" action="{{ url_for('confirm_payroll') }}" style="display:inline" onsubmit="return confirm('اعتماد صرف المرتبات؟')">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
         <input type="hidden" name="month" value="{{ month }}">
         <button class="btn btn-primary">✅ اعتماد الصرف</button>
     </form>

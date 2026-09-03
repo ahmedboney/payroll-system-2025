@@ -62,6 +62,7 @@
                             {% endif %}
                             {% if current_user.role=='admin' %}
                             <form method="POST" action="{{ url_for('delete_employee', emp_id=e.id) }}" style="display:inline" onsubmit="return confirm('حذف موظف؟')">
+                                <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
                                 <button class="btn btn-sm btn-danger">حذف</button>
                             </form>
                             {% endif %}

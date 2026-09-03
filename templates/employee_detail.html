@@ -69,6 +69,7 @@
         <div class="modal-header"><h3>تعديل بيانات الموظف</h3>
             <button class="modal-close" onclick="closeModal('editModal')">&times;</button></div>
         <form method="POST" action="{{ url_for('edit_employee', emp_id=emp.id) }}">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
             <div class="modal-body">
                 <div class="form-section"><div class="form-section-title">البيانات الأساسية</div>
                     <div class="form-row">

@@ -28,8 +28,10 @@
                         <td class="no-print">
                             {% if r.status=='pending' %}
                             <form method="POST" action="{{ url_for('leave_status', leave_id=r.id, status='approved') }}" style="display:inline">
+                                <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
                                 <button class="btn btn-sm btn-success">اعتماد</button></form>
                             <form method="POST" action="{{ url_for('leave_status', leave_id=r.id, status='rejected') }}" style="display:inline">
+                                <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
                                 <button class="btn btn-sm btn-danger">رفض</button></form>
                             {% endif %}
                         </td>
@@ -49,6 +51,7 @@
         <div class="modal-header"><h3>طلب إجازة</h3>
             <button class="modal-close" onclick="closeModal('addModal')">&times;</button></div>
         <form method="POST" action="{{ url_for('add_leave') }}">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
             <div class="modal-body">
                 <div class="form-group"><label>الموظف *</label>
                     <select name="employee_id" class="form-control" required>

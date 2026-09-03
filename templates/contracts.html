@@ -29,6 +29,7 @@
                             <button class="btn btn-sm btn-primary" onclick="editContract({{ c|tojson }})">تعديل</button>
                             {% if current_user.role=='admin' %}
                             <form method="POST" action="{{ url_for('delete_contract', cid=c.id) }}" style="display:inline" onsubmit="return confirm('حذف العقد؟')">
+                                <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
                                 <button class="btn btn-sm btn-danger">حذف</button>
                             </form>
                             {% endif %}
@@ -49,6 +50,7 @@
         <div class="modal-header"><h3 id="cModalTitle">إضافة عقد جديد</h3>
             <button class="modal-close" onclick="closeModal('addModal')">&times;</button></div>
         <form id="contractForm" method="POST" action="{{ url_for('add_contract') }}">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
             <div class="modal-body">
                 <div class="form-group"><label>الموظف *</label>
                     <select name="employee_id" class="form-control" required>

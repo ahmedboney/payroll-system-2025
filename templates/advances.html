@@ -27,6 +27,7 @@
                         <td class="no-print">
                             {% if current_user.role=='admin' %}
                             <form method="POST" action="{{ url_for('delete_advance', adv_id=r.id) }}" style="display:inline" onsubmit="return confirm('حذف السلفة؟')">
+                                <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
                                 <button class="btn btn-sm btn-danger">حذف</button></form>
                             {% endif %}
                         </td>
@@ -44,6 +45,7 @@
         <div class="modal-header"><h3>إضافة سلفة</h3>
             <button class="modal-close" onclick="closeModal('addModal')">&times;</button></div>
         <form method="POST" action="{{ url_for('add_advance') }}">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
             <div class="modal-body">
                 <div class="form-group"><label>الموظف *</label>
                     <select name="employee_id" class="form-control" required>
